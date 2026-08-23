@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import CollapsibleCard from "./CollapsibleCard";
 import { isOnBoard, type Employee } from "@/lib/supabase";
 
 /**
@@ -34,14 +35,16 @@ export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
   const shown = expanded ? list : list.slice(0, 8);
 
   return (
-    <div className="card">
-      <div className="card-head">
-        <h3>거주지역 분포</h3>
+    <CollapsibleCard
+      id="residence"
+      title="거주지역 분포"
+      meta={
         <span className="unit">
           현원 {onBoardCount}명 · {list.length}개 지역
           {unknown > 0 && ` · 미기재 ${unknown}`}
         </span>
-      </div>
+      }
+    >
 
       <div className="t-scroll">
         <table>
@@ -83,6 +86,6 @@ export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
         시·구 단위만 기록합니다 — <b>상세 주소는 저장하지 않습니다.</b> 통근 거리·거점
         오피스 검토처럼 집계 목적에는 시·구로 충분하고, 그 이상은 보관할 이유가 없습니다.
       </div>
-    </div>
+    </CollapsibleCard>
   );
 }

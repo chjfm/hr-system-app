@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import CollapsibleCard from "./CollapsibleCard";
 import { isOnBoard, today, type Employee } from "@/lib/supabase";
 
 const PERIODS = [
@@ -65,25 +66,29 @@ export default function TurnoverByDept({ rows }: { rows: Employee[] }) {
   const maxRate = Math.max(1, ...list.map((r) => r.rate));
 
   return (
-    <div className="card">
-      <div className="card-head">
-        <h3>부서별 퇴사</h3>
-        <select
-          className="input period"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value as typeof period)}
-          aria-label="집계 기간"
-        >
-          {PERIODS.map((p) => (
-            <option key={p.key} value={p.key}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        <span className="unit">
-          {since} 이후 · 총 {total}명
-        </span>
-      </div>
+    <CollapsibleCard
+      id="turnover"
+      title="부서별 퇴사"
+      meta={
+        <>
+          <select
+            className="input period"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as typeof period)}
+            aria-label="집계 기간"
+          >
+            {PERIODS.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <span className="unit">
+            {since} 이후 · 총 {total}명
+          </span>
+        </>
+      }
+    >
 
       {list.length === 0 ? (
         <div className="t-empty">이 기간에 퇴사자가 없습니다.</div>
@@ -124,6 +129,6 @@ export default function TurnoverByDept({ rows }: { rows: Employee[] }) {
         옵니다</b> — 같은 2명이라도 33명 부서와 6명 부서는 전혀 다른 신호라 비율순으로
         정렬합니다. 퇴사일이 아직 오지 않은 사람은 현원으로 셉니다.
       </div>
-    </div>
+    </CollapsibleCard>
   );
 }

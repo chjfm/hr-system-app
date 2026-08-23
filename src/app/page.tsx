@@ -20,6 +20,7 @@ import { COLUMNS, sortRows, type SortKey, type SortState } from "@/lib/sort";
 import { monthlyMovement, quarterly } from "@/lib/movement";
 import { useSession } from "./AuthBar";
 import MovementChart from "./MovementChart";
+import CollapsibleCard from "./CollapsibleCard";
 import TurnoverByDept from "./TurnoverByDept";
 import ResidenceBreakdown from "./ResidenceBreakdown";
 import BulkTransfer from "./BulkTransfer";
@@ -241,15 +242,16 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="card">
-        <div className="card-head">
-          <h3>인원 변동 — 최근 12개월</h3>
+      <CollapsibleCard
+        id="movement"
+        title="인원 변동 — 최근 12개월"
+        meta={
           <span className="unit">
             누적 입사 {year12.inn} · 퇴사 {year12.out} · 순증 {year12.net > 0 ? "+" : ""}
             {year12.net} · 명
           </span>
-        </div>
-
+        }
+      >
         <MovementChart data={months} />
 
         <div className="t-scroll">
@@ -293,7 +295,7 @@ export default function Home() {
             </tbody>
           </table>
         </div>
-      </div>
+      </CollapsibleCard>
 
       <div className="card">
         <div className="card-head">
