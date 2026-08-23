@@ -45,24 +45,34 @@
 }
 
 /* 직원 대장 — 토큰의 표 스타일은 숫자 표 기준(우측 정렬)이다.
-   이 화면은 텍스트 표이므로 날짜 열만 우측에 두고 나머지는 좌측으로 돌린다. */
+   이 화면은 텍스트 표이므로 날짜 열만 우측에 두고 나머지는 좌측으로 돌린다.
+   nth-child 로 맞추면 열이 하나 추가될 때마다 전부 밀리므로 클래스로 지정한다. */
 table th,
 table td {
   text-align: left;
 }
 
-/* 입사일·퇴사일 */
-table th:nth-child(6),
-table td:nth-child(6),
-table th:nth-child(7),
-table td:nth-child(7) {
+table th.a-right,
+table td.a-right {
   text-align: right;
 }
 
-table th:last-child,
-table td:last-child {
+table th.a-center,
+table td.a-center {
   text-align: center;
   width: 76px;
+}
+
+/* 선택 체크박스 열 */
+table th.a-check,
+table td.a-check {
+  width: 32px;
+  padding-left: 20px;
+  padding-right: 0;
+}
+
+table td.a-check input {
+  cursor: pointer;
 }
 
 td .chip {
@@ -261,14 +271,12 @@ table.quarters td:not(:first-child) {
 }
 
 /* 우측/가운데 정렬 열은 제목 버튼도 같은 쪽으로 붙인다 */
-th:nth-child(6) .th-sort,
-th:nth-child(7) .th-sort,
-th:nth-child(8) .th-sort {
+th.a-right .th-sort {
   justify-content: flex-end;
   width: 100%;
 }
 
-th:last-child .th-sort {
+th.a-center .th-sort {
   justify-content: center;
   width: 100%;
 }
@@ -320,6 +328,28 @@ th:last-child .th-sort {
   font-size: 10px;
   line-height: 1.5;
   color: var(--faint);
+}
+
+/* 일괄 발령 대상 목록 — 길어지면 모달이 화면을 넘는다 */
+.bulk-list {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-ctl);
+}
+
+/* 부서별 퇴사 — 카드 제목 옆 기간 선택 */
+.card-head .input.period {
+  height: 26px;
+  font-size: 11px;
+  padding: 0 8px;
+}
+
+/* 이직률 막대 — 수치를 이미 옆에 적었으므로 보조 표현이다 */
+.bar-cell {
+  display: block;
+  min-width: 90px;
+  height: 8px;
 }
 
 .input[readonly] {

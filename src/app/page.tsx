@@ -20,6 +20,8 @@ import { COLUMNS, sortRows, type SortKey, type SortState } from "@/lib/sort";
 import { monthlyMovement, quarterly } from "@/lib/movement";
 import { useSession } from "./AuthBar";
 import MovementChart from "./MovementChart";
+import TurnoverByDept from "./TurnoverByDept";
+import BulkTransfer from "./BulkTransfer";
 import EmployeeDetail from "./EmployeeDetail";
 import EmployeeForm from "./EmployeeForm";
 
@@ -50,6 +52,10 @@ export default function Home() {
 
   // R11 — 전 컬럼 정렬
   const [sort, setSort] = useState<SortState>({ key: "employee_no", dir: "asc" });
+
+  // R14 — 조직개편 일괄 발령 대상 선택
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const [viewing, setViewing] = useState<Employee | null>(null);
   const [editing, setEditing] = useState<Employee | null>(null);
@@ -161,6 +167,34 @@ export default function Home() {
     setCreating(false);
     setViewing(null);
     await load();
+  }
+
+  /** 화면에 보이는 것만 선택 대상 — 필터를 바꾸면 안 보이는 선택은 정리한다 */
+  const visibleIds = useMemo(() => new Set(filtered.map((r) => r.id)), [filtered]);
+  const pickedRows = useMemo(
+    () => filtered.filter((r) => picked.has(r.id)),
+    [filtered, picked],
+  );
+  const allVisiblePicked = filtered.length > 0 && filtered.every((r) => picked.has(r.id));
+
+  function togglePick(id: string) {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllVisible() {
+    setPicked((prev) => {
+      if (allVisiblePicked) {
+        const next = new Set(prev);
+        for (const id of visibleIds) next.delete(id);
+        return next;
+      }
+      return new Set([...prev, ...visibleIds]);
+    });
   }
 
   function toggleSort(key: SortKey) {
@@ -282,6 +316,8 @@ export default function Home() {
         </div>
       </div>
 
+      <TurnoverByDept rows={rows} />
+
       <div className="toolbar">
         <input
           className="input"
@@ -345,6 +381,11 @@ export default function Home() {
         >
           엑셀 내보내기 ({filtered.length})
         </button>
+        {canEdit && pickedRows.length > 0 && (
+          <button className="btn primary" onClick={() => setBulkOpen(true)}>
+            조직개편 일괄 발령 ({pickedRows.length})
+          </button>
+        )}
         <button
           className="btn primary"
           disabled={!canEdit}
@@ -375,10 +416,24 @@ export default function Home() {
             <table>
               <thead>
                 <tr>
+                  {canEdit && (
+                    <th className="a-check">
+                      <input
+                        type="checkbox"
+                        checked={allVisiblePicked}
+                        onChange={toggleAllVisible}
+                        aria-label="표시된 인원 전체 선택"
+                      />
+                    </th>
+                  )}
                   {COLUMNS.map((c) => {
                     const on = sort.key === c.key;
                     return (
-                      <th key={c.key} aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+                      <th
+                        key={c.key}
+                        className={c.align === "right" ? "a-right" : c.align === "center" ? "a-center" : undefined}
+                        aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+                      >
                         <button
                           className={`th-sort${on ? " on" : ""}`}
                           onClick={() => toggleSort(c.key)}
@@ -398,15 +453,25 @@ export default function Home() {
                   const ds = displayStatus(r);
                   return (
                     <tr key={r.id} className="rowlink" onClick={() => setViewing(r)}>
+                      {canEdit && (
+                        <td className="a-check" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={picked.has(r.id)}
+                            onChange={() => togglePick(r.id)}
+                            aria-label={`${r.name_ko} 선택`}
+                          />
+                        </td>
+                      )}
                       <td>{r.employee_no}</td>
                       <td>{r.name_ko}</td>
                       <td>{r.company}</td>
                       <td>{r.department}</td>
                       <td>{r.position}</td>
-                      <td>{r.hire_date}</td>
-                      <td>{formatTenure(tenureYears(r))}</td>
-                      <td>{r.resign_date ?? "–"}</td>
-                      <td>
+                      <td className="a-right">{r.hire_date}</td>
+                      <td className="a-right">{formatTenure(tenureYears(r))}</td>
+                      <td className="a-right">{r.resign_date ?? "–"}</td>
+                      <td className="a-center">
                         <span className={STATUS_CHIP[ds]}>{ds}</span>
                       </td>
                     </tr>
@@ -430,6 +495,18 @@ export default function Home() {
           canEdit={canEdit}
           onEdit={() => setEditing(viewing)}
           onClose={() => setViewing(null)}
+        />
+      )}
+
+      {bulkOpen && (
+        <BulkTransfer
+          targets={pickedRows}
+          departments={selectableDepts}
+          onDone={async () => {
+            setPicked(new Set());
+            await load();
+          }}
+          onClose={() => setBulkOpen(false)}
         />
       )}
 
