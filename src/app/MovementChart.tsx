@@ -9,15 +9,18 @@ export type MonthPoint = {
   net: number;
 };
 
-const W = 720;
-const H = 196;
-const PAD_L = 30;
-const PAD_B = 36;
-const PAD_T = 24;
+/* viewBox 좌표계를 실제 렌더 폭(약 1100px)에 맞춘다.
+   720으로 두면 SVG가 1.52배 확대돼 지정 11px 글자가 화면에서 16.7px로 나온다 —
+   본문(11px)보다 크다. 좌표계를 키워 배율을 1에 가깝게 두면 지정 px가 곧 화면 px다. */
+const W = 1120;
+const H = 305;
+const PAD_L = 47;
+const PAD_B = 56;
+const PAD_T = 37;
 const MID = PAD_T + (H - PAD_T - PAD_B) / 2;
 const HALF = (H - PAD_T - PAD_B) / 2;
-const BAR_W = 11; // 종전 18 → 61%
-const RADIUS = 3.5;
+const BAR_W = 17;
+const RADIUS = 5.5;
 
 /** 위(입사)는 상단만, 아래(퇴사)는 하단만 둥근 막대. rect 의 rx 는 네 귀퉁이에 다 걸린다. */
 function barPath(x: number, w: number, len: number, up: boolean): string {
@@ -71,12 +74,12 @@ export default function MovementChart({ data }: { data: MonthPoint[] }) {
           onMouseLeave={() => setHover(null)}
         >
           {/* 그리드는 최대치 두 줄만 아주 옅게. 0선만 한 단계 진하게. */}
-          <line x1={PAD_L - 8} y1={MID - HALF} x2={W} y2={MID - HALF} className="gridline" />
-          <line x1={PAD_L - 8} y1={MID + HALF} x2={W} y2={MID + HALF} className="gridline" />
-          <line x1={PAD_L - 8} y1={MID} x2={W} y2={MID} className="zeroline" />
-          <text x="0" y={MID - HALF + 4} className="ax">{max}</text>
-          <text x="0" y={MID + 4} className="ax">0</text>
-          <text x="0" y={MID + HALF + 4} className="ax">{max}</text>
+          <line x1={PAD_L - 12} y1={MID - HALF} x2={W} y2={MID - HALF} className="gridline" />
+          <line x1={PAD_L - 12} y1={MID + HALF} x2={W} y2={MID + HALF} className="gridline" />
+          <line x1={PAD_L - 12} y1={MID} x2={W} y2={MID} className="zeroline" />
+          <text x="0" y={MID - HALF + 5} className="ax">{max}</text>
+          <text x="0" y={MID + 5} className="ax">0</text>
+          <text x="0" y={MID + HALF + 5} className="ax">{max}</text>
 
           {data.map((d, i) => {
             const x = xOf(i);
@@ -89,30 +92,30 @@ export default function MovementChart({ data }: { data: MonthPoint[] }) {
                 {d.inn > 0 ? (
                   <path d={barPath(x, BAR_W, hIn, true)} className="bar-in" />
                 ) : (
-                  <rect x={x} y={MID - 2} width={BAR_W} height={2} rx={1} className="stub" />
+                  <rect x={x} y={MID - 3} width={BAR_W} height={3} rx={1.5} className="stub" />
                 )}
                 {d.out > 0 ? (
                   <path d={barPath(x, BAR_W, hOut, false)} className="bar-out" />
                 ) : (
-                  <rect x={x} y={MID} width={BAR_W} height={2} rx={1} className="stub" />
+                  <rect x={x} y={MID} width={BAR_W} height={3} rx={1.5} className="stub" />
                 )}
 
                 {d.inn > 0 && (
-                  <text x={x + BAR_W / 2} y={MID - hIn - 6} className="val">
+                  <text x={x + BAR_W / 2} y={MID - hIn - 9} className="val">
                     {d.inn}
                   </text>
                 )}
                 {d.out > 0 && (
-                  <text x={x + BAR_W / 2} y={MID + hOut + 12} className="val">
+                  <text x={x + BAR_W / 2} y={MID + hOut + 18} className="val">
                     {d.out}
                   </text>
                 )}
 
-                <text x={x + BAR_W / 2} y={H - 18} className="ax-m">
+                <text x={x + BAR_W / 2} y={H - 28} className="ax-m">
                   {d.month.slice(5)}
                 </text>
                 {(d.month.slice(5) === "01" || i === 0) && (
-                  <text x={x + BAR_W / 2} y={H - 5} className="ax-y">
+                  <text x={x + BAR_W / 2} y={H - 8} className="ax-y">
                     {d.month.slice(0, 4)}
                   </text>
                 )}
@@ -120,9 +123,9 @@ export default function MovementChart({ data }: { data: MonthPoint[] }) {
                 {/* 히트 영역은 막대보다 넓게 — 얇은 막대를 정확히 겨냥하지 않아도 잡힌다 */}
                 <rect
                   x={PAD_L + i * step}
-                  y={PAD_T - 10}
+                  y={PAD_T - 15}
                   width={step}
-                  height={H - PAD_T - PAD_B + 20}
+                  height={H - PAD_T - PAD_B + 30}
                   className="hit"
                   onMouseEnter={() => setHover(i)}
                   onFocus={() => setHover(i)}

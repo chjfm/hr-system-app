@@ -160,7 +160,7 @@ table.quarters td:not(:first-child) {
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted);
 }
 
@@ -201,7 +201,8 @@ table.quarters td:not(:first-child) {
 
 .chart {
   width: 100%;
-  min-width: 560px;
+  /* 좌표계를 키웠으므로 최소 폭도 함께 올린다 — 더 좁아지면 글자가 같이 줄어든다 */
+  min-width: 900px;
   height: auto;
   display: block;
 }
@@ -236,7 +237,7 @@ table.quarters td:not(:first-child) {
 
 /* 수치는 기본적으로 물러나 있고, 그 달을 짚었을 때만 앞으로 나온다 */
 .chart .val {
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 500;
   fill: var(--muted);
   text-anchor: middle;
@@ -259,7 +260,7 @@ table.quarters td:not(:first-child) {
 .chart .ax,
 .chart .ax-m,
 .chart .ax-y {
-  font-size: 10px;
+  font-size: 8.5px;
   fill: var(--muted);
   text-anchor: middle;
 }
@@ -298,7 +299,7 @@ table.quarters td:not(:first-child) {
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-ctl);
   padding: 5px 10px;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--ink-cell);
   pointer-events: none;
   z-index: 2;
@@ -1056,4 +1057,14 @@ table.quarters tbody tr {
 table.quarters tbody tr:last-child td {
   border-top: 1px solid var(--line-soft);
   padding-top: 7px;
+}
+
+/* R25-2 — 분기표 셀도 차트와 밀도를 맞춘다 */
+table.quarters th,
+table.quarters td {
+  font-size: 11px;
+}
+
+table.quarters .sub-label {
+  font-size: 9px;
 }
