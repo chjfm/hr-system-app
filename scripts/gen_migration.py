@@ -167,8 +167,14 @@ values
 
 -- ---------------------------------------------------------------- 이력 자동기록 (R3·R4·R5)
 -- 수기 기록을 없애는 것이 이 시스템의 핵심이므로, 앱이 아니라 DB에서 보장한다.
+-- SECURITY DEFINER 여야 한다. 기본값(INVOKER)이면 트리거가 호출자(anon) 권한으로
+-- 돌아가 appointments 의 RLS에 막힌다. 이력은 시스템만 기록해야 하므로 anon insert
+-- 정책을 여는 대신 함수 권한을 올린다.
 create or replace function public.log_appointment() returns trigger
-language plpgsql as $$
+language plpgsql
+security definer
+set search_path = public
+as $$
 begin
   if tg_op = 'INSERT' then
     insert into public.appointments (employee_no, appointed_on, kind, detail)
