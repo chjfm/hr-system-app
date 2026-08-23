@@ -1,0 +1,121 @@
+/* 화면 골격 — design-tokens.css를 확장한다. 색은 반드시 토큰을 경유한다. */
+
+.topbar {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar .brand {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+}
+
+/* 필터 줄 */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toolbar .grow {
+  margin-left: auto;
+}
+
+/* 부서별 인원 — 카드 안 보조 목록 */
+.deptlist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* 표 안의 상태 칩은 좌측 정렬이 자연스럽다 */
+td .chip {
+  vertical-align: middle;
+}
+
+.t-empty {
+  padding: 28px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--faint);
+}
+
+/* 행 클릭 가능 표시 */
+tbody tr.rowlink {
+  cursor: pointer;
+}
+
+tbody tr.rowlink:hover {
+  background: var(--surface-2);
+}
+
+/* 폼 */
+.formgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.field .input,
+.field select.input {
+  width: 100%;
+}
+
+select.input {
+  appearance: none;
+  cursor: pointer;
+}
+
+/* 모달 */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.modal {
+  width: 100%;
+  max-width: 640px;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 12px 40px;
+  }
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

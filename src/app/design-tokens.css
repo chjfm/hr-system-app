@@ -1,0 +1,271 @@
+/* ============================================================================
+   DI Works 화면 디자인 — 토큰 (복사용 템플릿)
+
+   출처   : dev 서버 런타임 실측 (GM-001 전사매출현황 · GM-003 부서 목표관리)
+   기준일 : 2026-07-16
+   근거   : [내부·규칙] DI Works 화면 디자인_토큰 규정_v0.1.md
+
+   사용법 : 아티팩트/목업 <style> 최상단에 그대로 붙인다. 값 임의 변경 금지.
+            컴포넌트는 항상 토큰을 경유한다 — 미디어쿼리 안에서 직접 색을 쓰지 않는다.
+            (그래야 라이트/다크 재정의가 한 곳에서 끝난다)
+
+   주의   : Pretendard는 아티팩트 CSP상 CDN 로드 불가 → 시스템 한글 서체로 폴백.
+            실화면과 서체가 완전히 동일하지는 않다.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------- 라이트 (정본) */
+:root {
+  /* 표면 */
+  --ground:      #f5f6f8;  /* 바탕 */
+  --surface:     #ffffff;  /* 카드 */
+  --surface-2:   #fafafa;  /* 입력·보조 면 */
+  --sidebar:     #f5f5f5;
+
+  /* 선 */
+  --line:        #e5e5e5;  /* 카드 테두리 */
+  --line-soft:   #f3f4f6;  /* 표 구분선 */
+  --line-strong: #d9d9d9;
+
+  /* 글자 */
+  --ink:         #424242;  /* 기본·제목 */
+  --ink-value:   #3c3c3c;  /* 숫자 */
+  --ink-cell:    #5c5c5c;  /* 표 th·td */
+  --muted:       #666666;  /* 라벨·캡션 */
+  --faint:       #9e9e9e;  /* placeholder·단위 */
+
+  /* 브랜드 — 유일한 강조색 */
+  --accent:      #ff6b00;
+  --accent-2:    #ff9b52;  /* 순차 인코딩 2단 */
+  --accent-soft: #fff5f0;
+  --on-accent:   #ffffff;
+
+  /* 상태 (강조색과 별개 축) */
+  --good:      #22c55e;  --good-soft: #dcfce7;
+  --warn:      #f5a623;  --warn-soft: #fff8e6;
+  --bad:       #f44336;  --bad-soft:  #ffebee;
+  --info:      #3b82f6;  --info-soft: #dbeafe;
+
+  /* 형태 — 실측: 카드 12px, 컨트롤 6px. 그림자 없음 */
+  --radius-card: 12px;
+  --radius-ctl:  6px;
+  --radius-xs:   4px;
+
+  /* 치수 */
+  --card-pad:      20px;   /* 카드 안쪽 */
+  --card-gap:      12px;   /* 카드 사이 */
+  --cell-pad:      10px 12px;
+  --sidebar-w:     140px;
+  --topbar-h:      56px;
+  --ctl-h:         32px;
+}
+
+/* ------------------------------------------------------- 다크 (가독성 확보용 파생)
+   DI Works는 라이트 전용. 다크는 색 판정 기준이 아니다. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground:      #17191c;
+    --surface:     #1e2126;
+    --surface-2:   #24282e;
+    --sidebar:     #1a1d21;
+    --line:        #343941;
+    --line-soft:   #2b2f36;
+    --line-strong: #454b55;
+    --ink:         #e4e6ea;
+    --ink-value:   #f0f2f5;
+    --ink-cell:    #c2c6cd;
+    --muted:       #9aa0a9;
+    --faint:       #71767f;
+    --accent:      #ff8534;
+    --accent-2:    #b35400;
+    --accent-soft: #2e1b0d;
+    --on-accent:   #17191c;
+    --good:      #4ade80;  --good-soft: #14301f;
+    --warn:      #fbbf24;  --warn-soft: #33270d;
+    --bad:       #f87171;  --bad-soft:  #351a1a;
+    --info:      #60a5fa;  --info-soft: #14273f;
+  }
+}
+
+/* 뷰어 토글이 미디어쿼리를 양방향으로 이겨야 한다 */
+:root[data-theme="dark"] {
+  --ground:      #17191c;
+  --surface:     #1e2126;
+  --surface-2:   #24282e;
+  --sidebar:     #1a1d21;
+  --line:        #343941;
+  --line-soft:   #2b2f36;
+  --line-strong: #454b55;
+  --ink:         #e4e6ea;
+  --ink-value:   #f0f2f5;
+  --ink-cell:    #c2c6cd;
+  --muted:       #9aa0a9;
+  --faint:       #71767f;
+  --accent:      #ff8534;
+  --accent-2:    #b35400;
+  --accent-soft: #2e1b0d;
+  --on-accent:   #17191c;
+  --good:      #4ade80;  --good-soft: #14301f;
+  --warn:      #fbbf24;  --warn-soft: #33270d;
+  --bad:       #f87171;  --bad-soft:  #351a1a;
+  --info:      #60a5fa;  --info-soft: #14273f;
+}
+
+:root[data-theme="light"] {
+  --ground:      #f5f6f8;
+  --surface:     #ffffff;
+  --surface-2:   #fafafa;
+  --sidebar:     #f5f5f5;
+  --line:        #e5e5e5;
+  --line-soft:   #f3f4f6;
+  --line-strong: #d9d9d9;
+  --ink:         #424242;
+  --ink-value:   #3c3c3c;
+  --ink-cell:    #5c5c5c;
+  --muted:       #666666;
+  --faint:       #9e9e9e;
+  --accent:      #ff6b00;
+  --accent-2:    #ff9b52;
+  --accent-soft: #fff5f0;
+  --on-accent:   #ffffff;
+  --good:      #22c55e;  --good-soft: #dcfce7;
+  --warn:      #f5a623;  --warn-soft: #fff8e6;
+  --bad:       #f44336;  --bad-soft:  #ffebee;
+  --info:      #3b82f6;  --info-soft: #dbeafe;
+}
+
+/* ---------------------------------------------------------------- 바탕 */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Pretendard", "Pretendard Variable", -apple-system, BlinkMacSystemFont,
+               "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", sans-serif;
+  font-size: 11px;          /* 실측 — 일반 웹보다 작다. 밀도가 이 화면의 성격 */
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;   /* 숫자 열 정렬 */
+}
+
+/* ---------------------------------------------------------------- 기본 컴포넌트
+   최소 골격만. 화면별 변형은 각 목업에서 확장한다. */
+
+/* 카드 — 그림자 없음. 깊이는 테두리로만 */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--card-pad);
+  display: flex; flex-direction: column; gap: 16px;
+}
+.card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card-head h3 { margin: 0; font-size: 12px; font-weight: 700; color: var(--ink); }
+.card-head .unit { margin-left: auto; font-size: 11px; color: var(--faint); }
+
+/* 표 — th 12/700, td 13/500, 숫자 우측정렬 */
+.t-scroll { overflow-x: auto; }   /* 가로 스크롤은 항상 자기 컨테이너 안에서 */
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: var(--cell-pad); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { padding-left: 20px; text-align: left; }
+thead th {
+  font-size: 12px; font-weight: 700; color: var(--ink-cell);
+  border-bottom: 1px solid var(--line);
+}
+tbody td { font-size: 13px; font-weight: 500; color: var(--ink-cell); }
+tbody tr { border-bottom: 1px solid var(--line-soft); }
+tfoot td {   /* 합계 행 — 주황 */
+  font-size: 13px; font-weight: 700; color: var(--accent);
+  border-top: 1px solid var(--line);
+}
+
+/* 이상치 행 */
+tbody tr.flag { background: var(--bad-soft); }
+tbody tr.flag td:first-child { box-shadow: inset 3px 0 0 var(--bad); }
+.pos { color: var(--good) !important; font-weight: 700; }
+.neg { color: var(--bad)  !important; font-weight: 700; }
+
+/* 필터 알약 — `라벨 | 값 ▾` */
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: var(--ctl-h); padding: 0 12px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-ctl); font-size: 12px;
+}
+.pill .pl { color: var(--muted); }
+.pill .pv { color: var(--ink-value); font-weight: 500; }
+
+/* 칩 */
+.chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 500; white-space: nowrap;
+  border: 1px solid var(--line); border-radius: var(--radius-xs);
+  padding: 1px 7px; background: var(--surface-2); color: var(--muted);
+}
+.chip.ok   { background: var(--good-soft); color: var(--good); border-color: var(--good); }
+.chip.no   { background: var(--bad-soft);  color: var(--bad);  border-color: var(--bad); }
+.chip.plan { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+.chip.acc  { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
+/* 버튼 */
+.btn {
+  appearance: none; font: inherit; font-size: 11px; font-weight: 500;
+  height: var(--ctl-h); padding: 0 14px; border-radius: var(--radius-ctl);
+  cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+}
+.btn:hover { background: var(--surface-2); color: var(--ink); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn.primary {
+  background: var(--accent); border-color: var(--accent);
+  color: var(--on-accent); font-weight: 600;
+}
+.btn.primary:hover { background: var(--surface); color: var(--accent); }
+
+/* 입력 */
+.input {
+  height: var(--ctl-h); padding: 0 12px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--radius-ctl); font-size: 12px; color: var(--ink);
+}
+.input::placeholder { color: var(--faint); }
+.input:focus { outline: none; border-color: var(--accent); }
+
+/* KPI 스트립 — 핵심 1개만 주황(.lead) */
+.kpis {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line); border-radius: var(--radius-ctl); overflow: hidden;
+}
+.kpi { padding: 12px 14px; display: flex; flex-direction: column; gap: 3px;
+       border-right: 1px solid var(--line); }
+.kpi:last-child { border-right: 0; }
+.kpi .k { font-size: 11px; color: var(--muted); }
+.kpi .v { font-size: 16px; font-weight: 700; color: var(--ink-value); letter-spacing: -0.3px; }
+.kpi .s { font-size: 10px; color: var(--faint); }
+.kpi.lead .v { color: var(--accent); }
+.kpi.pos  .v { color: var(--good); }
+.kpi.neg  .v { color: var(--bad); }
+
+/* 진도 바 — 실측 h10~12px, 단색(그라데이션 금지) */
+.track {
+  position: relative; height: 12px; border-radius: var(--radius-ctl);
+  background: var(--surface); border: 1px solid var(--line);
+}
+.track .fill {
+  position: absolute; inset: -1px auto -1px -1px;
+  background: var(--accent); border-radius: var(--radius-ctl);
+}
+
+/* 콜아웃 */
+.callout {
+  border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  background: var(--surface-2);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  padding: 10px 12px; font-size: 11px; color: var(--muted); line-height: 1.6;
+}
+.callout b { color: var(--ink); font-weight: 600; }
+
+/* ---------------------------------------------------------------- 접근성 */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
