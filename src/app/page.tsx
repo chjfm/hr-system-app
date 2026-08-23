@@ -248,7 +248,7 @@ export default function Home() {
         defaultOpen={false}
         meta={
           <span className="unit">
-            누적 입사 {year12.inn} · 퇴사 {year12.out} · 순증 {year12.net > 0 ? "+" : ""}
+            누적 입사 {year12.inn} · 퇴사 {year12.out} · 증감 {year12.net > 0 ? "+" : ""}
             {year12.net} · 명
           </span>
         }
@@ -282,7 +282,7 @@ export default function Home() {
                 ))}
               </tr>
               <tr>
-                <td>순증</td>
+                <td>증감</td>
                 {quarters.map((qt) => (
                   <td
                     key={qt.label}

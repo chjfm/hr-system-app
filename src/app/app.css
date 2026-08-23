@@ -693,6 +693,13 @@ tbody tr.rowlink:focus-visible {
   gap: 16px;
 }
 
+/* hidden 속성은 UA 스타일시트의 [hidden]{display:none} 으로 동작하는데,
+   위 .sec-body 규칙이 우선순위에서 이겨 무력화된다.
+   명시적으로 되살리지 않으면 접어도 화면에서 안 사라진다. */
+.sec-body[hidden] {
+  display: none;
+}
+
 /* 접힌 카드는 제목 줄만 남으므로 아래 여백을 줄인다 */
 .card:has(.sec-body[hidden]) {
   padding-bottom: 14px;
