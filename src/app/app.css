@@ -69,9 +69,64 @@ td .chip {
   vertical-align: middle;
 }
 
-/* KPI 5칸 — 토큰 기본값은 4칸이다 */
-.kpis-5 {
-  grid-template-columns: repeat(5, 1fr);
+/* KPI 6칸 — 토큰 기본값은 4칸이다 */
+.kpis-6 {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+@media (max-width: 1000px) {
+  .kpis-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 인원 변동 + 부서별 인원 나란히 */
+.row2 {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--card-gap);
+  align-items: start;
+}
+
+@media (max-width: 780px) {
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 인원 변동 표 — 열이 4개뿐이라 첫 열만 넓게 */
+table.mini th,
+table.mini td {
+  white-space: nowrap;
+}
+
+table.mini th:not(:first-child),
+table.mini td:not(:first-child) {
+  text-align: right;
+  width: 46px;
+}
+
+table.mini th:last-child,
+table.mini td:last-child {
+  text-align: right;
+  width: 52px;
+}
+
+/* 모달 안에 중첩되는 보조 카드 (발령일자 블록) */
+.card.sub {
+  border-color: var(--accent);
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.chip.warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.callout.warn {
+  border-left-color: var(--warn);
 }
 
 /* 부서 칩을 눌러 바로 필터링 */

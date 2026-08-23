@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase, type Appointment, type Employee } from "@/lib/supabase";
+import {
+  displayStatus,
+  formatTenure,
+  supabase,
+  tenureYears,
+  type Appointment,
+  type DisplayStatus,
+  type Employee,
+} from "@/lib/supabase";
 
 const KIND_CHIP: Record<Appointment["kind"], string> = {
   입사: "chip acc",
@@ -12,9 +20,10 @@ const KIND_CHIP: Record<Appointment["kind"], string> = {
   퇴사: "chip no",
 };
 
-const STATUS_CHIP: Record<string, string> = {
+const STATUS_CHIP: Record<DisplayStatus, string> = {
   재직: "chip ok",
   휴직: "chip plan",
+  퇴사예정: "chip warn",
   퇴사: "chip no",
 };
 
@@ -42,6 +51,9 @@ export default function EmployeeDetail({ employee, onEdit, onClose }: Props) {
     };
   }, [employee.employee_no]);
 
+  const ds = displayStatus(employee);
+  const tenure = formatTenure(tenureYears(employee));
+
   const fields: [string, string][] = [
     ["사번", employee.employee_no],
     ["한글성명", employee.name_ko],
@@ -52,6 +64,7 @@ export default function EmployeeDetail({ employee, onEdit, onClose }: Props) {
     ["채용구분", employee.hire_type ?? "–"],
     ["생년월일", employee.birth_date ?? "–"],
     ["입사일", employee.hire_date],
+    ["근속", tenure + (ds === "퇴사" ? " (퇴사 시점)" : "")],
     ["퇴사일", employee.resign_date ?? "–"],
     ["메일계정", employee.email ?? "–"],
     ["휴대전화", employee.phone ?? "–"],
@@ -62,11 +75,19 @@ export default function EmployeeDetail({ employee, onEdit, onClose }: Props) {
       <div className="card modal" onClick={(e) => e.stopPropagation()}>
         <div className="card-head">
           <h3>{employee.name_ko}</h3>
-          <span className={STATUS_CHIP[employee.status]}>{employee.status}</span>
+          <span className={STATUS_CHIP[ds]}>{ds}</span>
           <span className="unit">
-            {employee.company} · {employee.department} · {employee.position}
+            {employee.company} · {employee.department} · {employee.position} · 근속 {tenure}
           </span>
         </div>
+
+        {ds === "퇴사예정" && (
+          <div className="callout warn">
+            <b>퇴사일({employee.resign_date})이 아직 오지 않았습니다.</b> 이 직원은 지금도
+            재직 중이며 현원에 포함됩니다. 인수인계·잔여 연차 정산·4대보험 상실신고 일정을
+            확인하세요.
+          </div>
+        )}
 
         <dl className="detail">
           {fields.map(([k, v]) => (
@@ -78,7 +99,7 @@ export default function EmployeeDetail({ employee, onEdit, onClose }: Props) {
           <div className="detail-row">
             <dt>재직구분</dt>
             <dd>
-              <span className={STATUS_CHIP[employee.status]}>{employee.status}</span>
+              <span className={STATUS_CHIP[ds]}>{ds}</span>
             </dd>
           </div>
         </dl>

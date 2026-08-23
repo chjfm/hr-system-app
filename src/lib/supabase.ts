@@ -11,10 +11,19 @@ if (!url || !key) {
 
 export const supabase = createClient(url, key);
 
+/** DB에 저장되는 재직구분 */
 export const STATUSES = ["재직", "휴직", "퇴사"] as const;
 export const HIRE_TYPES = ["신입", "경력"] as const;
 
 export type Status = (typeof STATUSES)[number];
+
+/**
+ * 화면에 보이는 재직구분.
+ * '퇴사예정'은 저장하지 않고 퇴사일과 오늘을 비교해 매번 계산한다 —
+ * 상태를 저장해두면 퇴사일이 도래해도 누군가 바꿔주기 전까지 틀린 값이 남는다.
+ */
+export const DISPLAY_STATUSES = ["재직", "휴직", "퇴사예정", "퇴사"] as const;
+export type DisplayStatus = (typeof DISPLAY_STATUSES)[number];
 
 /** 발령이력 (R8) — 직원 1 : N */
 export type Appointment = {
@@ -25,7 +34,7 @@ export type Appointment = {
   detail: string;
 };
 
-/** 직원 기본정보 13항목 (R2). 주민번호·병역·장애는 스키마에 없다 (R9). */
+/** 직원 기본정보. 주민번호·병역·장애는 스키마에 없다 (R9). */
 export type Employee = {
   id: string;
   employee_no: string;
@@ -41,12 +50,45 @@ export type Employee = {
   email: string | null;
   phone: string | null;
   hire_type: string | null;
+  effective_date: string | null;
   created_at: string;
 };
 
 export type EmployeeInput = Omit<Employee, "id" | "created_at">;
 
-/** 목록 필터에 쓸 선택지는 실제 데이터에서 뽑는다 — 하드코딩하면 데이터와 어긋난다 */
+export function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * 퇴사일이 아직 오지 않았으면 '퇴사예정' — 이 사람은 지금도 출근한다.
+ * 퇴사와 퇴사예정은 인수인계·연차정산·4대보험 상실신고 일정이 전부 다르다.
+ */
+export function displayStatus(e: Employee, ref = today()): DisplayStatus {
+  if (e.status === "퇴사" && e.resign_date && e.resign_date > ref) return "퇴사예정";
+  return e.status;
+}
+
+/** 현원 = 지금 이 회사에 소속된 사람. 퇴사예정자는 아직 소속이다. */
+export function isOnBoard(e: Employee, ref = today()): boolean {
+  return displayStatus(e, ref) !== "퇴사";
+}
+
+/** 근속연수 — 퇴사자는 퇴사일까지, 재직자는 오늘까지 */
+export function tenureYears(e: Employee, ref = today()): number {
+  const from = new Date(e.hire_date);
+  const to = new Date(e.status === "퇴사" && e.resign_date ? e.resign_date : ref);
+  return Math.max(0, (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+}
+
+export function formatTenure(years: number): string {
+  const y = Math.floor(years);
+  const m = Math.round((years - y) * 12);
+  if (m === 12) return `${y + 1}년`;
+  return m === 0 ? `${y}년` : `${y}년 ${m}개월`;
+}
+
+/** 목록 필터 선택지는 실제 데이터에서 뽑는다 — 하드코딩하면 데이터와 어긋난다 */
 export function distinct<K extends keyof Employee>(rows: Employee[], key: K): string[] {
   return [...new Set(rows.map((r) => String(r[key])).filter(Boolean))].sort((a, b) =>
     a.localeCompare(b, "ko"),

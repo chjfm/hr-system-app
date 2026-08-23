@@ -2,18 +2,26 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  DISPLAY_STATUSES,
+  displayStatus,
   distinct,
-  STATUSES,
+  formatTenure,
+  isOnBoard,
   supabase,
+  tenureYears,
+  today,
+  type DisplayStatus,
   type Employee,
   type EmployeeInput,
 } from "@/lib/supabase";
+import { downloadCsv } from "@/lib/csv";
 import EmployeeDetail from "./EmployeeDetail";
 import EmployeeForm from "./EmployeeForm";
 
-const STATUS_CHIP: Record<string, string> = {
+const STATUS_CHIP: Record<DisplayStatus, string> = {
   재직: "chip ok",
   휴직: "chip plan",
+  퇴사예정: "chip warn",
   퇴사: "chip no",
 };
 
@@ -62,7 +70,7 @@ export default function Home() {
     return rows.filter((r) => {
       if (company !== ALL && r.company !== company) return false;
       if (dept !== ALL && r.department !== dept) return false;
-      if (status !== ALL && r.status !== status) return false;
+      if (status !== ALL && displayStatus(r) !== status) return false;
       if (position !== ALL && r.position !== position) return false;
       if (!needle) return true;
       return [r.name_ko, r.name_en ?? "", r.employee_no, r.department, r.position]
@@ -74,13 +82,48 @@ export default function Home() {
 
   // R7 — 대시보드 자동 집계
   const summary = useMemo(() => {
-    const byStatus: Record<string, number> = { 재직: 0, 휴직: 0, 퇴사: 0 };
+    const byStatus: Record<DisplayStatus, number> = {
+      재직: 0,
+      휴직: 0,
+      퇴사예정: 0,
+      퇴사: 0,
+    };
     const byDept = new Map<string, number>();
     for (const r of rows) {
-      byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
-      if (r.status !== "퇴사") byDept.set(r.department, (byDept.get(r.department) ?? 0) + 1);
+      byStatus[displayStatus(r)] += 1;
+      if (isOnBoard(r)) byDept.set(r.department, (byDept.get(r.department) ?? 0) + 1);
     }
-    return { byStatus, byDept: [...byDept.entries()].sort((a, b) => b[1] - a[1]) };
+    // 현원 = 지금 이 회사에 소속된 사람. 퇴사예정자는 아직 소속이다.
+    const onBoard = byStatus.재직 + byStatus.휴직 + byStatus.퇴사예정;
+
+    // isOnBoard를 그대로 넘기면 filter가 두 번째 인자로 index를 넣어 기준일이 깨진다
+    const onBoardRows = rows.filter((r) => isOnBoard(r));
+    const avgTenure = onBoardRows.length
+      ? onBoardRows.reduce((s, r) => s + tenureYears(r), 0) / onBoardRows.length
+      : 0;
+
+    return {
+      byStatus,
+      onBoard,
+      avgTenure,
+      byDept: [...byDept.entries()].sort((a, b) => b[1] - a[1]),
+    };
+  }, [rows]);
+
+  // 인원 변동 — 이번 달 / 올해 입·퇴사와 순증
+  const movement = useMemo(() => {
+    const t = today();
+    const month = t.slice(0, 7);
+    const year = t.slice(0, 4);
+    const count = (prefix: string) => {
+      const inn = rows.filter((r) => r.hire_date.startsWith(prefix)).length;
+      // 퇴사일이 아직 안 온 사람은 나간 것으로 세지 않는다
+      const out = rows.filter(
+        (r) => r.resign_date?.startsWith(prefix) && r.resign_date <= t,
+      ).length;
+      return { inn, out, net: inn - out };
+    };
+    return { month: count(month), year: count(year), label: { month, year } };
   }, [rows]);
 
   /** 다음 사번 — 기존 최대값 +1 (GA26031 형식) */
@@ -109,16 +152,16 @@ export default function Home() {
 
   return (
     <>
-      <section className="kpis kpis-5">
-        <div className="kpi">
-          <span className="k">총원</span>
-          <span className="v">{rows.length}</span>
-          <span className="s">등록 인원</span>
-        </div>
+      <section className="kpis kpis-6">
         <div className="kpi lead">
+          <span className="k">현원</span>
+          <span className="v">{summary.onBoard}</span>
+          <span className="s">재직+휴직+퇴사예정</span>
+        </div>
+        <div className="kpi">
           <span className="k">재직</span>
           <span className="v">{summary.byStatus.재직}</span>
-          <span className="s">명</span>
+          <span className="s">근무 중</span>
         </div>
         <div className="kpi">
           <span className="k">휴직</span>
@@ -126,43 +169,89 @@ export default function Home() {
           <span className="s">명</span>
         </div>
         <div className="kpi">
+          <span className="k">퇴사예정</span>
+          <span className="v">{summary.byStatus.퇴사예정}</span>
+          <span className="s">아직 재직 중</span>
+        </div>
+        <div className="kpi">
           <span className="k">퇴사</span>
           <span className="v">{summary.byStatus.퇴사}</span>
           <span className="s">누적</span>
         </div>
         <div className="kpi">
-          <span className="k">부서 수</span>
-          <span className="v">{summary.byDept.length}</span>
-          <span className="s">재직자 기준</span>
+          <span className="k">평균 근속</span>
+          <span className="v">{summary.avgTenure.toFixed(1)}</span>
+          <span className="s">년 · 현원 기준</span>
         </div>
       </section>
 
-      <div className="card">
-        <div className="card-head">
-          <h3>부서별 인원</h3>
-          <span className="unit">퇴사자 제외 · 명</span>
+      <div className="row2">
+        <div className="card">
+          <div className="card-head">
+            <h3>인원 변동</h3>
+            <span className="unit">퇴사일 도래분만 집계 · 명</span>
+          </div>
+          <div className="t-scroll">
+            <table className="mini">
+              <thead>
+                <tr>
+                  <th>기간</th>
+                  <th>입사</th>
+                  <th>퇴사</th>
+                  <th>순증</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>이번 달 ({movement.label.month})</td>
+                  <td>{movement.month.inn}</td>
+                  <td>{movement.month.out}</td>
+                  <td className={movement.month.net >= 0 ? "pos" : "neg"}>
+                    {movement.month.net >= 0 ? "+" : ""}
+                    {movement.month.net}
+                  </td>
+                </tr>
+                <tr>
+                  <td>올해 ({movement.label.year})</td>
+                  <td>{movement.year.inn}</td>
+                  <td>{movement.year.out}</td>
+                  <td className={movement.year.net >= 0 ? "pos" : "neg"}>
+                    {movement.year.net >= 0 ? "+" : ""}
+                    {movement.year.net}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className="deptlist">
-          {summary.byDept.length === 0 && !loading ? (
-            <span className="chip">데이터 없음</span>
-          ) : (
-            summary.byDept.map(([d, n]) => (
-              <button
-                key={d}
-                className={`chip acc chip-btn${dept === d ? " on" : ""}`}
-                onClick={() => setDept(dept === d ? ALL : d)}
-              >
-                {d} {n}
-              </button>
-            ))
-          )}
+
+        <div className="card">
+          <div className="card-head">
+            <h3>부서별 인원</h3>
+            <span className="unit">현원 기준 · 눌러서 필터 · 명</span>
+          </div>
+          <div className="deptlist">
+            {summary.byDept.length === 0 && !loading ? (
+              <span className="chip">데이터 없음</span>
+            ) : (
+              summary.byDept.map(([d, n]) => (
+                <button
+                  key={d}
+                  className={`chip acc chip-btn${dept === d ? " on" : ""}`}
+                  onClick={() => setDept(dept === d ? ALL : d)}
+                >
+                  {d} {n}
+                </button>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
       <div className="toolbar">
         <input
           className="input"
-          style={{ minWidth: 200 }}
+          style={{ minWidth: 180 }}
           placeholder="이름·사번 검색"
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -185,7 +274,7 @@ export default function Home() {
         </select>
         <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value={ALL}>재직구분 · 전체</option>
-          {STATUSES.map((s) => (
+          {DISPLAY_STATUSES.map((s) => (
             <option key={s} value={s}>
               {s}
             </option>
@@ -214,6 +303,13 @@ export default function Home() {
           </button>
         )}
         <span className="grow" />
+        <button
+          className="btn"
+          disabled={filtered.length === 0}
+          onClick={() => downloadCsv(filtered, `직원명부_${today().replace(/-/g, "")}.csv`)}
+        >
+          엑셀 내보내기 ({filtered.length})
+        </button>
         <button className="btn primary" onClick={() => setCreating(true)}>
           + 신규 입사자 등록
         </button>
@@ -245,25 +341,30 @@ export default function Home() {
                   <th>부서명</th>
                   <th>직급</th>
                   <th>입사일</th>
+                  <th>근속</th>
                   <th>퇴사일</th>
                   <th>재직구분</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => (
-                  <tr key={r.id} className="rowlink" onClick={() => setViewing(r)}>
-                    <td>{r.employee_no}</td>
-                    <td>{r.name_ko}</td>
-                    <td>{r.company}</td>
-                    <td>{r.department}</td>
-                    <td>{r.position}</td>
-                    <td>{r.hire_date}</td>
-                    <td>{r.resign_date ?? "–"}</td>
-                    <td>
-                      <span className={STATUS_CHIP[r.status]}>{r.status}</span>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((r) => {
+                  const ds = displayStatus(r);
+                  return (
+                    <tr key={r.id} className="rowlink" onClick={() => setViewing(r)}>
+                      <td>{r.employee_no}</td>
+                      <td>{r.name_ko}</td>
+                      <td>{r.company}</td>
+                      <td>{r.department}</td>
+                      <td>{r.position}</td>
+                      <td>{r.hire_date}</td>
+                      <td>{formatTenure(tenureYears(r))}</td>
+                      <td>{r.resign_date ?? "–"}</td>
+                      <td>
+                        <span className={STATUS_CHIP[ds]}>{ds}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -271,8 +372,9 @@ export default function Home() {
       </div>
 
       <div className="callout">
-        행을 클릭하면 기본정보 12항목과 <b>발령이력 타임라인</b>이 열립니다. 가상 회사
-        &lsquo;가온컴퍼니&rsquo;의 더미데이터이며 실제 직원 정보는 포함돼 있지 않습니다.
+        행을 클릭하면 기본정보와 <b>발령이력 타임라인</b>이 열립니다. 퇴사일이 아직 오지 않은
+        사람은 <b>퇴사예정</b>으로 구분해 현원에 포함합니다. 가상 회사
+        &lsquo;가온컴퍼니&rsquo;의 더미데이터입니다.
       </div>
 
       {viewing && !editing && (

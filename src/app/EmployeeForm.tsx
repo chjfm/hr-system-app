@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   HIRE_TYPES,
   STATUSES,
+  today,
   type Employee,
   type EmployeeInput,
   type Status,
@@ -35,7 +36,8 @@ export default function EmployeeForm({
   useEffect(() => {
     if (employee) {
       const { id: _id, created_at: _created, ...rest } = employee;
-      setForm(rest);
+      // 발령일자는 매 변경마다 새로 정한다 — 지난 값을 끌고 오면 조용히 틀린 날짜가 박힌다
+      setForm({ ...rest, effective_date: today() });
     } else {
       setForm({
         employee_no: nextEmployeeNo,
@@ -46,11 +48,12 @@ export default function EmployeeForm({
         department: departments[0] ?? "",
         position: positions[0] ?? "",
         birth_date: null,
-        hire_date: new Date().toISOString().slice(0, 10),
+        hire_date: today(),
         resign_date: null,
         email: null,
         phone: null,
         hire_type: "신입",
+        effective_date: null,
       });
     }
   }, [employee, companies, departments, positions, nextEmployeeNo]);
@@ -58,6 +61,19 @@ export default function EmployeeForm({
   if (!form) return null;
 
   const set = (patch: Partial<EmployeeInput>) => setForm({ ...form, ...patch });
+
+  /** 부서·직급·상태가 바뀌면 발령이력이 남는다 → 발령일자를 물어야 한다 */
+  const willLogAppointment =
+    !!employee &&
+    (form.department !== employee.department ||
+      form.position !== employee.position ||
+      (form.status !== employee.status && form.status !== "퇴사"));
+
+  // 조직 마스터 없이 오타만 막는 절충안 — 기존에 없던 값이면 경고
+  const newDepartment =
+    form.department.trim() && !departments.includes(form.department.trim())
+      ? form.department.trim()
+      : null;
 
   /** R5·R6 — 상태와 퇴사일은 항상 함께 움직인다 */
   function setStatus(value: Status) {
@@ -88,6 +104,14 @@ export default function EmployeeForm({
     }
     if (f.resign_date && f.resign_date < f.hire_date) {
       setError("퇴사일은 입사일보다 빠를 수 없습니다.");
+      return;
+    }
+    if (willLogAppointment && !f.effective_date) {
+      setError("발령일자를 입력해야 이력이 정확한 날짜로 기록됩니다.");
+      return;
+    }
+    if (f.effective_date && f.effective_date < f.hire_date) {
+      setError("발령일자는 입사일보다 빠를 수 없습니다.");
       return;
     }
 
@@ -289,6 +313,40 @@ export default function EmployeeForm({
             />
           </div>
         </div>
+
+        {willLogAppointment && (
+          <div className="card sub">
+            <div className="card-head">
+              <h3>발령일자</h3>
+              <span className="unit">이 변경이 효력을 갖는 날 · 이력에 이 날짜로 기록됩니다</span>
+            </div>
+            <div className="formgrid">
+              <div className="field">
+                <label htmlFor="f-eff">발령일자</label>
+                <input
+                  id="f-eff"
+                  type="date"
+                  className="input"
+                  value={form.effective_date ?? ""}
+                  min={form.hire_date || undefined}
+                  onChange={(e) => set({ effective_date: e.target.value || null })}
+                />
+              </div>
+            </div>
+            <div className="callout">
+              발령은 대개 오늘이 아닙니다 — <b>9월 1일자 발령을 오늘 미리 입력</b>하거나
+              지난 발령을 소급 입력할 수 있습니다. 이 날짜가 근속·승진연한 산정의 근거가 됩니다.
+            </div>
+          </div>
+        )}
+
+        {newDepartment && (
+          <div className="callout warn">
+            <b>&lsquo;{newDepartment}&rsquo;은(는) 기존에 없던 부서입니다.</b> 새 부서를 만드는 게
+            맞다면 그대로 저장하시고, 오타라면 아래 기존 부서에서 고르세요 —{" "}
+            {departments.join(" · ")}
+          </div>
+        )}
 
         <div className="callout">
           <b>재직구분을 &lsquo;퇴사&rsquo;로 바꾸면 퇴사일이 필수가 됩니다.</b> 부서·직급을 바꾸거나
