@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  DEPARTMENTS,
+  distinct,
   STATUSES,
   supabase,
   type Employee,
   type EmployeeInput,
 } from "@/lib/supabase";
+import EmployeeDetail from "./EmployeeDetail";
 import EmployeeForm from "./EmployeeForm";
 
 const STATUS_CHIP: Record<string, string> = {
@@ -16,25 +17,29 @@ const STATUS_CHIP: Record<string, string> = {
   퇴사: "chip no",
 };
 
+const ALL = "전체";
+
 export default function Home() {
   const [rows, setRows] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // R1 — 검색 + 필터 4종
   const [q, setQ] = useState("");
-  const [dept, setDept] = useState("전체");
-  const [status, setStatus] = useState("전체");
+  const [company, setCompany] = useState(ALL);
+  const [dept, setDept] = useState(ALL);
+  const [status, setStatus] = useState(ALL);
+  const [position, setPosition] = useState(ALL);
 
+  const [viewing, setViewing] = useState<Employee | null>(null);
   const [editing, setEditing] = useState<Employee | null>(null);
   const [creating, setCreating] = useState(false);
 
-  async function load() {
-    setLoading(true);
+  const load = useCallback(async () => {
     const { data, error } = await supabase
       .from("employees")
       .select("*")
-      .order("status", { ascending: true })
-      .order("hire_date", { ascending: true });
+      .order("employee_no", { ascending: true });
 
     if (error) setLoadError(error.message);
     else {
@@ -42,27 +47,34 @@ export default function Home() {
       setRows(data as Employee[]);
     }
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
+
+  const companies = useMemo(() => distinct(rows, "company"), [rows]);
+  const departments = useMemo(() => distinct(rows, "department"), [rows]);
+  const positions = useMemo(() => distinct(rows, "position"), [rows]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return rows.filter((r) => {
-      if (dept !== "전체" && r.department !== dept) return false;
-      if (status !== "전체" && r.status !== status) return false;
+      if (company !== ALL && r.company !== company) return false;
+      if (dept !== ALL && r.department !== dept) return false;
+      if (status !== ALL && r.status !== status) return false;
+      if (position !== ALL && r.position !== position) return false;
       if (!needle) return true;
-      return [r.name, r.department, r.position, r.employment_type, r.memo ?? ""]
+      return [r.name_ko, r.name_en ?? "", r.employee_no, r.department, r.position]
         .join(" ")
         .toLowerCase()
         .includes(needle);
     });
-  }, [rows, q, dept, status]);
+  }, [rows, q, company, dept, status, position]);
 
+  // R7 — 대시보드 자동 집계
   const summary = useMemo(() => {
-    const byStatus = { 재직: 0, 휴직: 0, 퇴사: 0 } as Record<string, number>;
+    const byStatus: Record<string, number> = { 재직: 0, 휴직: 0, 퇴사: 0 };
     const byDept = new Map<string, number>();
     for (const r of rows) {
       byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
@@ -71,31 +83,42 @@ export default function Home() {
     return { byStatus, byDept: [...byDept.entries()].sort((a, b) => b[1] - a[1]) };
   }, [rows]);
 
+  /** 다음 사번 — 기존 최대값 +1 (GA26031 형식) */
+  const nextEmployeeNo = useMemo(() => {
+    const year = String(new Date().getFullYear()).slice(2);
+    const max = rows.reduce((m, r) => {
+      const n = Number(r.employee_no.slice(-3));
+      return Number.isFinite(n) && n > m ? n : m;
+    }, 0);
+    return `GA${year}${String(max + 1).padStart(3, "0")}`;
+  }, [rows]);
+
   async function save(input: EmployeeInput) {
     const { error } = editing
       ? await supabase.from("employees").update(input).eq("id", editing.id)
       : await supabase.from("employees").insert(input);
     if (error) throw new Error(error.message);
+
     setEditing(null);
     setCreating(false);
+    setViewing(null);
     await load();
   }
 
-  async function remove() {
-    if (!editing) return;
-    const { error } = await supabase.from("employees").delete().eq("id", editing.id);
-    if (error) throw new Error(error.message);
-    setEditing(null);
-    await load();
-  }
+  const filterOn = q || [company, dept, status, position].some((v) => v !== ALL);
 
   return (
     <>
-      <section className="kpis">
+      <section className="kpis kpis-5">
+        <div className="kpi">
+          <span className="k">총원</span>
+          <span className="v">{rows.length}</span>
+          <span className="s">등록 인원</span>
+        </div>
         <div className="kpi lead">
-          <span className="k">재직 인원</span>
+          <span className="k">재직</span>
           <span className="v">{summary.byStatus.재직}</span>
-          <span className="s">전체 {rows.length}명 중</span>
+          <span className="s">명</span>
         </div>
         <div className="kpi">
           <span className="k">휴직</span>
@@ -124,9 +147,13 @@ export default function Home() {
             <span className="chip">데이터 없음</span>
           ) : (
             summary.byDept.map(([d, n]) => (
-              <span key={d} className="chip acc">
+              <button
+                key={d}
+                className={`chip acc chip-btn${dept === d ? " on" : ""}`}
+                onClick={() => setDept(dept === d ? ALL : d)}
+              >
                 {d} {n}
-              </span>
+              </button>
             ))
           )}
         </div>
@@ -135,34 +162,52 @@ export default function Home() {
       <div className="toolbar">
         <input
           className="input"
-          style={{ minWidth: 220 }}
-          placeholder="이름·직급·메모 검색"
+          style={{ minWidth: 200 }}
+          placeholder="이름·사번 검색"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
+        <select className="input" value={company} onChange={(e) => setCompany(e.target.value)}>
+          <option value={ALL}>소속 · 전체</option>
+          {companies.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
         <select className="input" value={dept} onChange={(e) => setDept(e.target.value)}>
-          <option value="전체">부서 · 전체</option>
-          {DEPARTMENTS.map((d) => (
+          <option value={ALL}>부서 · 전체</option>
+          {departments.map((d) => (
             <option key={d} value={d}>
               {d}
             </option>
           ))}
         </select>
         <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="전체">상태 · 전체</option>
+          <option value={ALL}>재직구분 · 전체</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
               {s}
             </option>
           ))}
         </select>
-        {(q || dept !== "전체" || status !== "전체") && (
+        <select className="input" value={position} onChange={(e) => setPosition(e.target.value)}>
+          <option value={ALL}>직급 · 전체</option>
+          {positions.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+        {filterOn && (
           <button
             className="btn"
             onClick={() => {
               setQ("");
-              setDept("전체");
-              setStatus("전체");
+              setCompany(ALL);
+              setDept(ALL);
+              setStatus(ALL);
+              setPosition(ALL);
             }}
           >
             초기화
@@ -178,14 +223,13 @@ export default function Home() {
         <div className="card-head">
           <h3>직원 대장</h3>
           <span className="unit">
-            {filtered.length}명 표시 {filtered.length !== rows.length && `· 전체 ${rows.length}명`}
+            {filtered.length}명 표시
+            {filtered.length !== rows.length && ` · 전체 ${rows.length}명`}
           </span>
         </div>
 
         {loadError ? (
-          <div className="callout" style={{ borderLeftColor: "var(--bad)", color: "var(--bad)" }}>
-            데이터를 불러오지 못했습니다 — {loadError}
-          </div>
+          <div className="callout error">데이터를 불러오지 못했습니다 — {loadError}</div>
         ) : loading ? (
           <div className="t-empty">불러오는 중…</div>
         ) : filtered.length === 0 ? (
@@ -195,22 +239,24 @@ export default function Home() {
             <table>
               <thead>
                 <tr>
+                  <th>사번</th>
                   <th>이름</th>
-                  <th>부서</th>
+                  <th>소속</th>
+                  <th>부서명</th>
                   <th>직급</th>
-                  <th>고용형태</th>
                   <th>입사일</th>
                   <th>퇴사일</th>
-                  <th>상태</th>
+                  <th>재직구분</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id} className="rowlink" onClick={() => setEditing(r)}>
-                    <td>{r.name}</td>
+                  <tr key={r.id} className="rowlink" onClick={() => setViewing(r)}>
+                    <td>{r.employee_no}</td>
+                    <td>{r.name_ko}</td>
+                    <td>{r.company}</td>
                     <td>{r.department}</td>
                     <td>{r.position}</td>
-                    <td>{r.employment_type}</td>
                     <td>{r.hire_date}</td>
                     <td>{r.resign_date ?? "–"}</td>
                     <td>
@@ -225,15 +271,26 @@ export default function Home() {
       </div>
 
       <div className="callout">
-        행을 클릭하면 상세 정보를 수정할 수 있습니다. <b>가상 회사의 더미데이터</b>이며 실제
-        직원 정보는 포함돼 있지 않습니다.
+        행을 클릭하면 기본정보 12항목과 <b>발령이력 타임라인</b>이 열립니다. 가상 회사
+        &lsquo;가온컴퍼니&rsquo;의 더미데이터이며 실제 직원 정보는 포함돼 있지 않습니다.
       </div>
+
+      {viewing && !editing && (
+        <EmployeeDetail
+          employee={viewing}
+          onEdit={() => setEditing(viewing)}
+          onClose={() => setViewing(null)}
+        />
+      )}
 
       {(creating || editing) && (
         <EmployeeForm
           employee={editing}
+          companies={companies}
+          departments={departments}
+          positions={positions}
+          nextEmployeeNo={nextEmployeeNo}
           onSave={save}
-          onDelete={editing ? remove : undefined}
           onClose={() => {
             setCreating(false);
             setEditing(null);

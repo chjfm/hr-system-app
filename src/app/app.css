@@ -51,21 +51,116 @@ table td {
   text-align: left;
 }
 
-table th:nth-child(5),
-table td:nth-child(5),
+/* 입사일·퇴사일 */
 table th:nth-child(6),
-table td:nth-child(6) {
+table td:nth-child(6),
+table th:nth-child(7),
+table td:nth-child(7) {
   text-align: right;
 }
 
 table th:last-child,
 table td:last-child {
   text-align: center;
-  width: 72px;
+  width: 76px;
 }
 
 td .chip {
   vertical-align: middle;
+}
+
+/* KPI 5칸 — 토큰 기본값은 4칸이다 */
+.kpis-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+/* 부서 칩을 눌러 바로 필터링 */
+.chip-btn {
+  appearance: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chip-btn.on {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+
+/* 상세 — 기본정보 */
+.detail {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px 16px;
+}
+
+.detail-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.detail-row dt {
+  flex: 0 0 68px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.detail-row dd {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-value);
+  word-break: break-all;
+}
+
+/* 발령이력 타임라인 */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.timeline li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.timeline li::before {
+  content: "";
+  position: absolute;
+  left: -17px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.tl-date {
+  font-size: 11px;
+  color: var(--faint);
+  flex: 0 0 76px;
+}
+
+.tl-detail {
+  font-size: 12px;
+  color: var(--ink-cell);
+}
+
+.callout.error {
+  border-left-color: var(--bad);
+  color: var(--bad);
 }
 
 .t-empty {

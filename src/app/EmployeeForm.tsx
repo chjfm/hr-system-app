@@ -2,34 +2,33 @@
 
 import { useEffect, useState } from "react";
 import {
-  DEPARTMENTS,
-  EMPLOYMENT_TYPES,
+  HIRE_TYPES,
   STATUSES,
   type Employee,
   type EmployeeInput,
   type Status,
 } from "@/lib/supabase";
 
-const EMPTY: EmployeeInput = {
-  name: "",
-  department: DEPARTMENTS[0],
-  position: "",
-  hire_date: "",
-  employment_type: EMPLOYMENT_TYPES[0],
-  status: "재직",
-  resign_date: null,
-  memo: null,
-};
-
 type Props = {
   employee: Employee | null; // null이면 신규 등록
+  companies: string[];
+  departments: string[];
+  positions: string[];
+  nextEmployeeNo: string;
   onSave: (input: EmployeeInput) => Promise<void>;
-  onDelete?: () => Promise<void>;
   onClose: () => void;
 };
 
-export default function EmployeeForm({ employee, onSave, onDelete, onClose }: Props) {
-  const [form, setForm] = useState<EmployeeInput>(EMPTY);
+export default function EmployeeForm({
+  employee,
+  companies,
+  departments,
+  positions,
+  nextEmployeeNo,
+  onSave,
+  onClose,
+}: Props) {
+  const [form, setForm] = useState<EmployeeInput | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,40 +37,56 @@ export default function EmployeeForm({ employee, onSave, onDelete, onClose }: Pr
       const { id: _id, created_at: _created, ...rest } = employee;
       setForm(rest);
     } else {
-      setForm(EMPTY);
+      setForm({
+        employee_no: nextEmployeeNo,
+        name_ko: "",
+        name_en: null,
+        status: "재직",
+        company: companies[0] ?? "본사",
+        department: departments[0] ?? "",
+        position: positions[0] ?? "",
+        birth_date: null,
+        hire_date: new Date().toISOString().slice(0, 10),
+        resign_date: null,
+        email: null,
+        phone: null,
+        hire_type: "신입",
+      });
     }
-  }, [employee]);
+  }, [employee, companies, departments, positions, nextEmployeeNo]);
 
-  /** 퇴사일을 넣으면 상태가 '퇴사'로 넘어가고, 상태를 되돌리면 퇴사일이 비워진다 */
-  function setResignDate(value: string) {
-    if (value) {
-      setForm((f) => ({ ...f, resign_date: value, status: "퇴사" }));
-    } else {
-      setForm((f) => ({ ...f, resign_date: null, status: f.status === "퇴사" ? "재직" : f.status }));
-    }
-  }
+  if (!form) return null;
 
+  const set = (patch: Partial<EmployeeInput>) => setForm({ ...form, ...patch });
+
+  /** R5·R6 — 상태와 퇴사일은 항상 함께 움직인다 */
   function setStatus(value: Status) {
     if (value === "퇴사") {
-      setForm((f) => ({
-        ...f,
-        status: value,
-        resign_date: f.resign_date ?? new Date().toISOString().slice(0, 10),
-      }));
+      set({ status: value, resign_date: form!.resign_date ?? "" });
     } else {
-      setForm((f) => ({ ...f, status: value, resign_date: null }));
+      set({ status: value, resign_date: null });
     }
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const f = form!;
 
-    if (!form.name.trim() || !form.position.trim() || !form.hire_date) {
-      setError("이름·직급·입사일은 필수입니다.");
+    if (!f.employee_no.trim() || !f.name_ko.trim() || !f.department.trim() || !f.position.trim()) {
+      setError("사번·한글성명·부서명·직급은 필수입니다.");
       return;
     }
-    if (form.resign_date && form.resign_date < form.hire_date) {
+    if (!f.hire_date) {
+      setError("입사일은 필수입니다.");
+      return;
+    }
+    // R6 — 퇴사 처리 시 퇴사일 필수 (미입력이면 저장 차단)
+    if (f.status === "퇴사" && !f.resign_date) {
+      setError("퇴사 처리에는 퇴사일이 반드시 필요합니다.");
+      return;
+    }
+    if (f.resign_date && f.resign_date < f.hire_date) {
       setError("퇴사일은 입사일보다 빠를 수 없습니다.");
       return;
     }
@@ -79,10 +94,12 @@ export default function EmployeeForm({ employee, onSave, onDelete, onClose }: Pr
     setSaving(true);
     try {
       await onSave({
-        ...form,
-        name: form.name.trim(),
-        position: form.position.trim(),
-        memo: form.memo?.trim() || null,
+        ...f,
+        employee_no: f.employee_no.trim(),
+        name_ko: f.name_ko.trim(),
+        name_en: f.name_en?.trim() || null,
+        email: f.email?.trim() || null,
+        phone: f.phone?.trim() || null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "저장에 실패했습니다.");
@@ -94,37 +111,75 @@ export default function EmployeeForm({ employee, onSave, onDelete, onClose }: Pr
     <div className="backdrop" onClick={onClose}>
       <form className="card modal" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <div className="card-head">
-          <h3>{employee ? "직원 정보 수정" : "신규 입사자 등록"}</h3>
-          <span className="unit">필수 항목 · 이름 / 직급 / 입사일</span>
+          <h3>{employee ? `${employee.name_ko} 정보 수정` : "신규 입사자 등록"}</h3>
+          <span className="unit">필수 · 사번 / 성명 / 부서 / 직급 / 입사일</span>
         </div>
 
         <div className="formgrid">
           <div className="field">
-            <label htmlFor="f-name">이름</label>
+            <label htmlFor="f-no">사번</label>
             <input
-              id="f-name"
+              id="f-no"
               className="input"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="홍길동"
-              autoFocus
+              value={form.employee_no}
+              onChange={(e) => set({ employee_no: e.target.value })}
+              disabled={!!employee}
             />
           </div>
 
           <div className="field">
-            <label htmlFor="f-dept">부서</label>
-            <select
+            <label htmlFor="f-name">한글성명</label>
+            <input
+              id="f-name"
+              className="input"
+              value={form.name_ko}
+              onChange={(e) => set({ name_ko: e.target.value })}
+              placeholder="홍길동"
+              autoFocus={!employee}
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="f-nameen">영문성명</label>
+            <input
+              id="f-nameen"
+              className="input"
+              value={form.name_en ?? ""}
+              onChange={(e) => set({ name_en: e.target.value })}
+              placeholder="Gildong Hong"
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="f-company">소속</label>
+            <input
+              id="f-company"
+              className="input"
+              list="dl-company"
+              value={form.company}
+              onChange={(e) => set({ company: e.target.value })}
+            />
+            <datalist id="dl-company">
+              {companies.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </div>
+
+          <div className="field">
+            <label htmlFor="f-dept">부서명</label>
+            <input
               id="f-dept"
               className="input"
+              list="dl-dept"
               value={form.department}
-              onChange={(e) => setForm({ ...form, department: e.target.value })}
-            >
-              {DEPARTMENTS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
+              onChange={(e) => set({ department: e.target.value })}
+            />
+            <datalist id="dl-dept">
+              {departments.map((d) => (
+                <option key={d} value={d} />
               ))}
-            </select>
+            </datalist>
           </div>
 
           <div className="field">
@@ -132,26 +187,42 @@ export default function EmployeeForm({ employee, onSave, onDelete, onClose }: Pr
             <input
               id="f-pos"
               className="input"
+              list="dl-pos"
               value={form.position}
-              onChange={(e) => setForm({ ...form, position: e.target.value })}
-              placeholder="사원 / 대리 / 팀장"
+              onChange={(e) => set({ position: e.target.value })}
             />
+            <datalist id="dl-pos">
+              {positions.map((p) => (
+                <option key={p} value={p} />
+              ))}
+            </datalist>
           </div>
 
           <div className="field">
-            <label htmlFor="f-type">고용형태</label>
+            <label htmlFor="f-hiretype">채용구분</label>
             <select
-              id="f-type"
+              id="f-hiretype"
               className="input"
-              value={form.employment_type}
-              onChange={(e) => setForm({ ...form, employment_type: e.target.value })}
+              value={form.hire_type ?? "신입"}
+              onChange={(e) => set({ hire_type: e.target.value })}
             >
-              {EMPLOYMENT_TYPES.map((t) => (
+              {HIRE_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {t}
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="field">
+            <label htmlFor="f-birth">생년월일</label>
+            <input
+              id="f-birth"
+              type="date"
+              className="input"
+              value={form.birth_date ?? ""}
+              onChange={(e) => set({ birth_date: e.target.value || null })}
+            />
           </div>
 
           <div className="field">
@@ -161,12 +232,12 @@ export default function EmployeeForm({ employee, onSave, onDelete, onClose }: Pr
               type="date"
               className="input"
               value={form.hire_date}
-              onChange={(e) => setForm({ ...form, hire_date: e.target.value })}
+              onChange={(e) => set({ hire_date: e.target.value })}
             />
           </div>
 
           <div className="field">
-            <label htmlFor="f-status">상태</label>
+            <label htmlFor="f-status">재직구분</label>
             <select
               id="f-status"
               className="input"
@@ -182,59 +253,55 @@ export default function EmployeeForm({ employee, onSave, onDelete, onClose }: Pr
           </div>
 
           <div className="field">
-            <label htmlFor="f-resign">퇴사일</label>
+            <label htmlFor="f-resign">
+              퇴사일{form.status === "퇴사" && <b style={{ color: "var(--accent)" }}> · 필수</b>}
+            </label>
             <input
               id="f-resign"
               type="date"
               className="input"
               value={form.resign_date ?? ""}
               min={form.hire_date || undefined}
-              onChange={(e) => setResignDate(e.target.value)}
+              disabled={form.status !== "퇴사"}
+              onChange={(e) => set({ resign_date: e.target.value || "" })}
             />
           </div>
 
           <div className="field">
-            <label htmlFor="f-memo">메모</label>
+            <label htmlFor="f-email">메일계정</label>
             <input
-              id="f-memo"
+              id="f-email"
               className="input"
-              value={form.memo ?? ""}
-              onChange={(e) => setForm({ ...form, memo: e.target.value })}
-              placeholder="선택 입력"
+              value={form.email ?? ""}
+              onChange={(e) => set({ email: e.target.value })}
+              placeholder="gildong.hong@gaon.co.kr"
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="f-phone">휴대전화</label>
+            <input
+              id="f-phone"
+              className="input"
+              value={form.phone ?? ""}
+              onChange={(e) => set({ phone: e.target.value })}
+              placeholder="010-0000-0000"
             />
           </div>
         </div>
 
         <div className="callout">
-          <b>퇴사일을 입력하면 상태가 자동으로 &lsquo;퇴사&rsquo;로 바뀝니다.</b> 반대로 상태를
-          재직·휴직으로 되돌리면 퇴사일이 지워집니다.
+          <b>재직구분을 &lsquo;퇴사&rsquo;로 바꾸면 퇴사일이 필수가 됩니다.</b> 부서·직급을 바꾸거나
+          상태를 변경하면 발령이력이 자동으로 남습니다.
         </div>
 
         {error && (
-          <div className="callout" style={{ borderLeftColor: "var(--bad)", color: "var(--bad)" }}>
+          <div className="callout error">
             {error}
           </div>
         )}
 
         <div className="toolbar">
-          {employee && onDelete && (
-            <button
-              type="button"
-              className="btn"
-              disabled={saving}
-              onClick={async () => {
-                setSaving(true);
-                try {
-                  await onDelete();
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : "삭제에 실패했습니다.");
-                  setSaving(false);
-                }
-              }}
-            >
-              삭제
-            </button>
-          )}
           <span className="grow" />
           <button type="button" className="btn" onClick={onClose} disabled={saving}>
             취소
