@@ -456,7 +456,21 @@ export default function Home() {
                 {filtered.map((r) => {
                   const ds = displayStatus(r);
                   return (
-                    <tr key={r.id} className="rowlink" onClick={() => setViewing(r)}>
+                    <tr
+                      key={r.id}
+                      className="rowlink"
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`${r.name_ko} 상세 보기`}
+                      onClick={() => setViewing(r)}
+                      onKeyDown={(e) => {
+                        // 행 클릭이 상세를 여는 유일한 경로라 키보드로도 열려야 한다
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setViewing(r);
+                        }
+                      }}
+                    >
                       {canEdit && (
                         <td className="a-check" onClick={(e) => e.stopPropagation()}>
                           <input
