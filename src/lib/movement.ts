@@ -26,25 +26,40 @@ export function monthlyMovement(rows: Employee[], ref = today()): MonthPoint[] {
   });
 }
 
-export type QuarterPoint = { label: string; inn: number; out: number; net: number };
+export type QuarterPoint = {
+  label: string;
+  inn: number;
+  out: number;
+  net: number;
+  /** 12개월 창에 3개월이 다 들어오지 않은 분기 — 경영보고에서 온전한 분기와 섞이면 안 된다 */
+  partial: boolean;
+};
 
 /**
  * 분기 병기 (R12).
  * 140명 규모는 월 변동이 0~3명이라 월 막대만으로는 추세가 안 읽힌다.
+ *
+ * 3개월씩 기계적으로 자르면 안 된다 — 12개월 창의 시작이 분기 경계와 어긋나면
+ * 2025-12 가 "26년 1분기"에 들어가는 식으로 달력 분기와 틀어진다.
+ * 반드시 연도·분기로 묶는다.
  */
 export function quarterly(months: MonthPoint[]): QuarterPoint[] {
-  const out: QuarterPoint[] = [];
-  for (let i = 0; i < months.length; i += 3) {
-    const chunk = months.slice(i, i + 3);
-    if (chunk.length === 0) continue;
-    const last = chunk[chunk.length - 1].month;
-    const q = Math.floor((Number(last.slice(5)) - 1) / 3) + 1;
-    out.push({
-      label: `${last.slice(2, 4)}년 ${q}분기`,
-      inn: chunk.reduce((s, c) => s + c.inn, 0),
-      out: chunk.reduce((s, c) => s + c.out, 0),
-      net: chunk.reduce((s, c) => s + c.net, 0),
-    });
+  const bucket = new Map<string, MonthPoint[]>();
+  for (const m of months) {
+    const year = m.month.slice(0, 4);
+    const q = Math.floor((Number(m.month.slice(5)) - 1) / 3) + 1;
+    const key = `${year}-${q}`;
+    bucket.set(key, [...(bucket.get(key) ?? []), m]);
   }
-  return out;
+
+  return [...bucket.entries()].map(([key, ms]) => {
+    const [year, q] = key.split("-");
+    return {
+      label: `${year.slice(2)}년 ${q}분기`,
+      inn: ms.reduce((s, c) => s + c.inn, 0),
+      out: ms.reduce((s, c) => s + c.out, 0),
+      net: ms.reduce((s, c) => s + c.net, 0),
+      partial: ms.length < 3,
+    };
+  });
 }

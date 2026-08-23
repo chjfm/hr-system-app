@@ -210,7 +210,10 @@ export default function Home() {
               <tr>
                 <th>분기</th>
                 {quarters.map((qt) => (
-                  <th key={qt.label}>{qt.label}</th>
+                  <th key={qt.label}>
+                    {qt.label}
+                    {qt.partial && <span className="sub-label">일부 기간</span>}
+                  </th>
                 ))}
               </tr>
             </thead>
