@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useState } from "react";
 
 export type MonthPoint = {
   month: string; // YYYY-MM
@@ -9,29 +9,44 @@ export type MonthPoint = {
   net: number;
 };
 
+const W = 720;
+const H = 196;
+const PAD_L = 30;
+const PAD_B = 36;
+const PAD_T = 24;
+const MID = PAD_T + (H - PAD_T - PAD_B) / 2;
+const HALF = (H - PAD_T - PAD_B) / 2;
+const BAR_W = 11; // 종전 18 → 61%
+const RADIUS = 3.5;
+
+/** 위(입사)는 상단만, 아래(퇴사)는 하단만 둥근 막대. rect 의 rx 는 네 귀퉁이에 다 걸린다. */
+function barPath(x: number, w: number, len: number, up: boolean): string {
+  const r = Math.min(RADIUS, len);
+  return up
+    ? `M${x} ${MID} V${MID - len + r} Q${x} ${MID - len} ${x + r} ${MID - len}
+       H${x + w - r} Q${x + w} ${MID - len} ${x + w} ${MID - len + r} V${MID} Z`
+    : `M${x} ${MID} V${MID + len - r} Q${x} ${MID + len} ${x + r} ${MID + len}
+       H${x + w - r} Q${x + w} ${MID + len} ${x + w} ${MID + len - r} V${MID} Z`;
+}
+
 /**
- * 인원 변동 12개월 추이 (R12).
+ * 인원 변동 12개월 추이 (R12 · R25).
  *
- * 140명 규모라 월 변동이 0~3명대다. 막대만 그리면 차이가 눈에 안 보이므로
- * 수치를 함께 찍고(R16 그래프 수치 병기), 분기 합계를 아래에 병기해
- * 추세를 읽을 수 있게 한다.
+ * 두 계열을 색으로 나누지 않는다 — 같은 강조색에 입사는 채움, 퇴사는 아웃라인이고
+ * 축 위/아래 방향으로도 갈린다. 색을 구분하지 못해도 읽힌다 (R16).
  *
- * 색으로만 입사/퇴사를 구분하지 않는다 — 범례에 라벨을 붙이고 막대 방향으로도
- * 구분한다(입사 위 / 퇴사 아래).
+ * 값이 0인 달도 0선 위에 짧은 스텁을 남긴다. 빈칸으로 두면 "데이터가 없다"로 읽히고
+ * 12개월의 리듬도 끊긴다.
  */
 export default function MovementChart({ data }: { data: MonthPoint[] }) {
-  const clipId = useId();
-  const max = Math.max(1, ...data.map((d) => Math.max(d.inn, d.out)));
+  const [hover, setHover] = useState<number | null>(null);
 
-  const W = 720;
-  const H = 150;
-  const PAD_L = 26;
-  const PAD_B = 34;
-  const PAD_T = 14;
-  const mid = PAD_T + (H - PAD_T - PAD_B) / 2;
-  const half = (H - PAD_T - PAD_B) / 2;
+  const max = Math.max(1, ...data.map((d) => Math.max(d.inn, d.out)));
   const step = (W - PAD_L) / data.length;
-  const barW = Math.min(18, step * 0.42);
+  const scale = (n: number) => (n / max) * HALF;
+  const xOf = (i: number) => PAD_L + i * step + (step - BAR_W) / 2;
+
+  const active = hover === null ? null : data[hover];
 
   return (
     <div className="chart-wrap">
@@ -42,10 +57,10 @@ export default function MovementChart({ data }: { data: MonthPoint[] }) {
         <span className="lg">
           <span className="sw sw-out" aria-hidden="true" /> 퇴사 (아래)
         </span>
-        <span className="lg-note">막대 위 숫자 = 인원 · 축 위/아래로도 구분</span>
+        <span className="lg-note">막대에 올리면 그 달 수치가 표시됩니다</span>
       </div>
 
-      <div className="t-scroll">
+      <div className="chart-box">
         <svg
           className="chart"
           viewBox={`0 0 ${W} ${H}`}
@@ -53,53 +68,92 @@ export default function MovementChart({ data }: { data: MonthPoint[] }) {
           aria-label={`최근 12개월 인원 변동. ${data
             .map((d) => `${d.month} 입사 ${d.inn}명 퇴사 ${d.out}명`)
             .join(", ")}`}
+          onMouseLeave={() => setHover(null)}
         >
-          <clipPath id={clipId}>
-            <rect x="0" y="0" width={W} height={H} />
-          </clipPath>
+          {/* 그리드는 최대치 두 줄만 아주 옅게. 0선만 한 단계 진하게. */}
+          <line x1={PAD_L - 8} y1={MID - HALF} x2={W} y2={MID - HALF} className="gridline" />
+          <line x1={PAD_L - 8} y1={MID + HALF} x2={W} y2={MID + HALF} className="gridline" />
+          <line x1={PAD_L - 8} y1={MID} x2={W} y2={MID} className="zeroline" />
+          <text x="0" y={MID - HALF + 4} className="ax">{max}</text>
+          <text x="0" y={MID + 4} className="ax">0</text>
+          <text x="0" y={MID + HALF + 4} className="ax">{max}</text>
 
-          {/* 0선 */}
-          <line x1={PAD_L - 6} y1={mid} x2={W} y2={mid} stroke="var(--line-strong)" strokeWidth="1" />
-          <text x="0" y={mid + 3} className="ax">
-            0
-          </text>
+          {data.map((d, i) => {
+            const x = xOf(i);
+            const on = hover === i;
+            const hIn = scale(d.inn);
+            const hOut = scale(d.out);
+            return (
+              <g key={d.month} className={on ? "col on" : "col"}>
+                {/* 값이 0이어도 0선 위에 스텁을 남겨 리듬을 유지한다 */}
+                {d.inn > 0 ? (
+                  <path d={barPath(x, BAR_W, hIn, true)} className="bar-in" />
+                ) : (
+                  <rect x={x} y={MID - 2} width={BAR_W} height={2} rx={1} className="stub" />
+                )}
+                {d.out > 0 ? (
+                  <path d={barPath(x, BAR_W, hOut, false)} className="bar-out" />
+                ) : (
+                  <rect x={x} y={MID} width={BAR_W} height={2} rx={1} className="stub" />
+                )}
 
-          <g clipPath={`url(#${clipId})`}>
-            {data.map((d, i) => {
-              const x = PAD_L + i * step + (step - barW) / 2;
-              const hIn = (d.inn / max) * half;
-              const hOut = (d.out / max) * half;
-              return (
-                <g key={d.month}>
-                  {d.inn > 0 && (
-                    <>
-                      <rect x={x} y={mid - hIn} width={barW} height={hIn} className="bar-in" />
-                      <text x={x + barW / 2} y={mid - hIn - 4} className="val">
-                        {d.inn}
-                      </text>
-                    </>
-                  )}
-                  {d.out > 0 && (
-                    <>
-                      <rect x={x} y={mid} width={barW} height={hOut} className="bar-out" />
-                      <text x={x + barW / 2} y={mid + hOut + 11} className="val">
-                        {d.out}
-                      </text>
-                    </>
-                  )}
-                  <text x={x + barW / 2} y={H - 18} className="ax-m">
-                    {d.month.slice(5)}
+                {d.inn > 0 && (
+                  <text x={x + BAR_W / 2} y={MID - hIn - 6} className="val">
+                    {d.inn}
                   </text>
-                  {(d.month.slice(5) === "01" || i === 0) && (
-                    <text x={x + barW / 2} y={H - 6} className="ax-y">
-                      {d.month.slice(0, 4)}
-                    </text>
-                  )}
-                </g>
-              );
-            })}
-          </g>
+                )}
+                {d.out > 0 && (
+                  <text x={x + BAR_W / 2} y={MID + hOut + 12} className="val">
+                    {d.out}
+                  </text>
+                )}
+
+                <text x={x + BAR_W / 2} y={H - 18} className="ax-m">
+                  {d.month.slice(5)}
+                </text>
+                {(d.month.slice(5) === "01" || i === 0) && (
+                  <text x={x + BAR_W / 2} y={H - 5} className="ax-y">
+                    {d.month.slice(0, 4)}
+                  </text>
+                )}
+
+                {/* 히트 영역은 막대보다 넓게 — 얇은 막대를 정확히 겨냥하지 않아도 잡힌다 */}
+                <rect
+                  x={PAD_L + i * step}
+                  y={PAD_T - 10}
+                  width={step}
+                  height={H - PAD_T - PAD_B + 20}
+                  className="hit"
+                  onMouseEnter={() => setHover(i)}
+                  onFocus={() => setHover(i)}
+                  onBlur={() => setHover(null)}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${d.month} 입사 ${d.inn}명 퇴사 ${d.out}명 증감 ${d.net > 0 ? "+" : ""}${d.net}명`}
+                />
+              </g>
+            );
+          })}
         </svg>
+
+        {active && (
+          <div
+            className="chart-tip"
+            // 양끝 달에서 툴팁이 카드 밖으로 잘리지 않게 가둔다
+            style={{
+              left: `${Math.min(88, Math.max(12, ((hover! + 0.5) * step + PAD_L - BAR_W / 2) / W * 100))}%`,
+            }}
+            role="status"
+          >
+            <b>{active.month}</b>
+            <span>입사 {active.inn}</span>
+            <span>퇴사 {active.out}</span>
+            <span className={active.net > 0 ? "pos" : active.net < 0 ? "neg" : undefined}>
+              증감 {active.net > 0 ? "+" : ""}
+              {active.net}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

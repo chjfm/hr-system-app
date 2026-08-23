@@ -146,11 +146,13 @@ table.quarters td:not(:first-child) {
   min-width: 68px;
 }
 
-/* ------------------------------------------------ 인원 변동 차트 (R12) */
+/* ------------------------------------------------ 인원 변동 차트 (R12 · R25)
+   두 계열을 색으로 나누지 않는다 — 같은 강조색에 채움/아웃라인 + 축 위아래 방향.
+   숫자·라벨은 전부 텍스트 토큰을 쓴다. 계열색을 글자에 입히지 않는다. */
 .chart-wrap {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .chart-legend {
@@ -190,6 +192,13 @@ table.quarters td:not(:first-child) {
   color: var(--muted);
 }
 
+.chart-box {
+  position: relative;
+  /* 차트 최소 폭이 560px이라 좁은 화면에서는 카드를 넘는다 —
+     페이지 전체가 아니라 이 안에서만 가로로 스크롤한다 */
+  overflow-x: auto;
+}
+
 .chart {
   width: 100%;
   min-width: 560px;
@@ -197,28 +206,60 @@ table.quarters td:not(:first-child) {
   display: block;
 }
 
-.chart .bar-in {
-  fill: var(--accent);
-}
-
-/* 퇴사는 색만 다른 게 아니라 테두리만 있는 빈 막대 — 색을 못 봐도 구분된다 (R16) */
-.chart .bar-out {
-  fill: var(--surface);
-  stroke: var(--accent);
+/* 그리드는 뒤로 물러난다 */
+.chart .gridline {
+  stroke: var(--line-soft);
   stroke-width: 1;
 }
 
+.chart .zeroline {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.chart .bar-in {
+  fill: var(--accent);
+  fill-opacity: 0.85;
+}
+
+/* 퇴사는 색이 아니라 빈 막대로 구분된다 — 색을 못 봐도 읽힌다 */
+.chart .bar-out {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 1.25;
+}
+
+/* 값 0인 달 — "데이터 없음"이 아니라 "값이 0"임을 남긴다 */
+.chart .stub {
+  fill: var(--line-strong);
+}
+
+/* 수치는 기본적으로 물러나 있고, 그 달을 짚었을 때만 앞으로 나온다 */
 .chart .val {
-  font-size: 9px;
-  font-weight: 700;
-  fill: var(--ink-value);
+  font-size: 11px;
+  font-weight: 500;
+  fill: var(--muted);
   text-anchor: middle;
+  transition: fill 0.12s ease;
+}
+
+.chart .col.on .val {
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.chart .col.on .bar-in {
+  fill-opacity: 1;
+}
+
+.chart .col.on .bar-out {
+  stroke-width: 2;
 }
 
 .chart .ax,
 .chart .ax-m,
 .chart .ax-y {
-  font-size: 9px;
+  font-size: 10px;
   fill: var(--muted);
   text-anchor: middle;
 }
@@ -227,8 +268,51 @@ table.quarters td:not(:first-child) {
   text-anchor: start;
 }
 
-.chart .ax-y {
-  fill: var(--muted);
+.chart .col.on .ax-m {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+/* 히트 영역 — 보이지 않지만 키보드로도 잡힌다 */
+.chart .hit {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.chart .hit:focus-visible {
+  fill: var(--accent);
+  fill-opacity: 0.07;
+}
+
+/* 툴팁 */
+.chart-tip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-ctl);
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--ink-cell);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.chart-tip b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart .val {
+    transition: none;
+  }
 }
 
 /* ------------------------------------------------ 정렬 가능한 열 제목 (R11) */
@@ -937,4 +1021,39 @@ tbody tr.far td:first-child::after {
    툴바 바로 위에 두어 검색·필터가 함께 보이게 한다. */
 .roster-anchor {
   scroll-margin-top: 12px;
+}
+
+/* R25 — 증감 칩. 색만으로 방향을 알리지 않는다: 부호와 숫자를 항상 함께 쓴다. */
+.chip.delta {
+  margin-left: 8px;
+  font-weight: 700;
+}
+
+.chip.delta.up {
+  background: var(--good-soft);
+  color: var(--ink-ok);
+  border-color: var(--good);
+}
+
+.chip.delta.down {
+  background: var(--bad-soft);
+  color: var(--ink-no);
+  border-color: var(--bad);
+}
+
+/* R25 — 분기표 경량화: 세로 구분선 없음, 행 높이 축소 */
+table.quarters th,
+table.quarters td {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-right: 0;
+}
+
+table.quarters tbody tr {
+  border-bottom: 0;
+}
+
+table.quarters tbody tr:last-child td {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 7px;
 }

@@ -288,8 +288,14 @@ export default function Home() {
         defaultOpen={false}
         meta={
           <span className="unit">
-            누적 입사 {year12.inn} · 퇴사 {year12.out} · 증감 {year12.net > 0 ? "+" : ""}
-            {year12.net} · 명
+            누적 입사 {year12.inn} · 퇴사 {year12.out} · 명
+            {/* 증감만 칩으로 승격 — 색과 함께 부호·숫자를 항상 병기한다 (R16) */}
+            <span
+              className={`chip delta ${year12.net > 0 ? "up" : year12.net < 0 ? "down" : ""}`}
+            >
+              증감 {year12.net > 0 ? "+" : ""}
+              {year12.net}
+            </span>
           </span>
         }
       >
