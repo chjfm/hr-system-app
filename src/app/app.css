@@ -123,6 +123,156 @@ table.mini td:last-child {
   color: var(--faint);
 }
 
+/* 분기 병기 표 */
+table.quarters th:first-child,
+table.quarters td:first-child {
+  width: 52px;
+  color: var(--muted);
+}
+
+table.quarters th:not(:first-child),
+table.quarters td:not(:first-child) {
+  width: auto;
+  min-width: 68px;
+}
+
+/* ------------------------------------------------ 인원 변동 차트 (R12) */
+.chart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.chart-legend .lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chart-legend .sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid var(--line-strong);
+}
+
+.chart-legend .sw-in {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.chart-legend .sw-out {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+.chart-legend .lg-note {
+  margin-left: auto;
+  color: var(--faint);
+}
+
+.chart {
+  width: 100%;
+  min-width: 560px;
+  height: auto;
+  display: block;
+}
+
+.chart .bar-in {
+  fill: var(--accent);
+}
+
+/* 퇴사는 색만 다른 게 아니라 테두리만 있는 빈 막대 — 색을 못 봐도 구분된다 (R16) */
+.chart .bar-out {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+.chart .val {
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--ink-value);
+  text-anchor: middle;
+}
+
+.chart .ax,
+.chart .ax-m,
+.chart .ax-y {
+  font-size: 9px;
+  fill: var(--muted);
+  text-anchor: middle;
+}
+
+.chart .ax {
+  text-anchor: start;
+}
+
+.chart .ax-y {
+  fill: var(--faint);
+}
+
+/* ------------------------------------------------ 정렬 가능한 열 제목 (R11) */
+.th-sort {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-cell);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.th-sort:hover {
+  color: var(--accent);
+}
+
+.th-sort:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.th-sort .arrow {
+  font-size: 8px;
+  color: var(--faint);
+}
+
+.th-sort.on {
+  color: var(--accent);
+}
+
+.th-sort.on .arrow {
+  color: var(--accent);
+}
+
+/* 우측/가운데 정렬 열은 제목 버튼도 같은 쪽으로 붙인다 */
+th:nth-child(6) .th-sort,
+th:nth-child(7) .th-sort,
+th:nth-child(8) .th-sort {
+  justify-content: flex-end;
+  width: 100%;
+}
+
+th:last-child .th-sort {
+  justify-content: center;
+  width: 100%;
+}
+
 /* 모달 안에 중첩되는 보조 카드 (발령일자 블록) */
 .card.sub {
   border-color: var(--accent);

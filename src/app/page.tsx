@@ -15,7 +15,10 @@ import {
   type EmployeeInput,
 } from "@/lib/supabase";
 import { downloadCsv } from "@/lib/csv";
+import { COLUMNS, sortRows, type SortKey, type SortState } from "@/lib/sort";
+import { monthlyMovement, quarterly } from "@/lib/movement";
 import { useSession } from "./AuthBar";
+import MovementChart from "./MovementChart";
 import EmployeeDetail from "./EmployeeDetail";
 import EmployeeForm from "./EmployeeForm";
 
@@ -42,6 +45,9 @@ export default function Home() {
   const [dept, setDept] = useState(ALL);
   const [status, setStatus] = useState(ALL);
   const [position, setPosition] = useState(ALL);
+
+  // R11 — 전 컬럼 정렬
+  const [sort, setSort] = useState<SortState>({ key: "employee_no", dir: "asc" });
 
   const [viewing, setViewing] = useState<Employee | null>(null);
   const [editing, setEditing] = useState<Employee | null>(null);
@@ -71,7 +77,7 @@ export default function Home() {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return rows.filter((r) => {
+    const matched = rows.filter((r) => {
       if (company !== ALL && r.company !== company) return false;
       if (dept !== ALL && r.department !== dept) return false;
       if (status !== ALL && displayStatus(r) !== status) return false;
@@ -82,7 +88,8 @@ export default function Home() {
         .toLowerCase()
         .includes(needle);
     });
-  }, [rows, q, company, dept, status, position]);
+    return sortRows(matched, sort);
+  }, [rows, q, company, dept, status, position, sort]);
 
   // R7 — 대시보드 자동 집계
   const summary = useMemo(() => {
@@ -97,10 +104,7 @@ export default function Home() {
       byStatus[displayStatus(r)] += 1;
       if (isOnBoard(r)) byDept.set(r.department, (byDept.get(r.department) ?? 0) + 1);
     }
-    // 현원 = 지금 이 회사에 소속된 사람. 퇴사예정자는 아직 소속이다.
     const onBoard = byStatus.재직 + byStatus.휴직 + byStatus.퇴사예정;
-
-    // isOnBoard를 그대로 넘기면 filter가 두 번째 인자로 index를 넣어 기준일이 깨진다
     const onBoardRows = rows.filter((r) => isOnBoard(r));
     const avgTenure = onBoardRows.length
       ? onBoardRows.reduce((s, r) => s + tenureYears(r), 0) / onBoardRows.length
@@ -114,23 +118,17 @@ export default function Home() {
     };
   }, [rows]);
 
-  // 인원 변동 — 이번 달 / 올해 입·퇴사와 순증
-  const movement = useMemo(() => {
-    const t = today();
-    const month = t.slice(0, 7);
-    const year = t.slice(0, 4);
-    const count = (prefix: string) => {
-      const inn = rows.filter((r) => r.hire_date.startsWith(prefix)).length;
-      // 퇴사일이 아직 안 온 사람은 나간 것으로 세지 않는다
-      const out = rows.filter(
-        (r) => r.resign_date?.startsWith(prefix) && r.resign_date <= t,
-      ).length;
-      return { inn, out, net: inn - out };
-    };
-    return { month: count(month), year: count(year), label: { month, year } };
-  }, [rows]);
+  // R12 — 12개월 추이 + 분기 병기
+  const months = useMemo(() => monthlyMovement(rows), [rows]);
+  const quarters = useMemo(() => quarterly(months), [months]);
+  const year12 = useMemo(
+    () => months.reduce(
+      (s, m) => ({ inn: s.inn + m.inn, out: s.out + m.out, net: s.net + m.net }),
+      { inn: 0, out: 0, net: 0 },
+    ),
+    [months],
+  );
 
-  /** 다음 사번 — 기존 최대값 +1 (GA26031 형식) */
   const nextEmployeeNo = useMemo(() => {
     const year = String(new Date().getFullYear()).slice(2);
     const max = rows.reduce((m, r) => {
@@ -150,6 +148,12 @@ export default function Home() {
     setCreating(false);
     setViewing(null);
     await load();
+  }
+
+  function toggleSort(key: SortKey) {
+    setSort((s) =>
+      s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
+    );
   }
 
   const filterOn = q || [company, dept, status, position].some((v) => v !== ALL);
@@ -189,67 +193,76 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="row2">
-        <div className="card">
-          <div className="card-head">
-            <h3>인원 변동</h3>
-            <span className="unit">퇴사일 도래분만 · 명</span>
-          </div>
-          <div className="t-scroll">
-            <table className="mini">
-              <thead>
-                <tr>
-                  <th>기간</th>
-                  <th>입사</th>
-                  <th>퇴사</th>
-                  <th>순증</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(
-                  [
-                    ["이번 달", movement.label.month, movement.month],
-                    ["올해", movement.label.year, movement.year],
-                  ] as const
-                ).map(([label, period, m]) => (
-                  <tr key={label}>
-                    <td>
-                      {label}
-                      <span className="sub-label">{period}</span>
-                    </td>
-                    <td>{m.inn}</td>
-                    <td>{m.out}</td>
-                    <td className={m.net > 0 ? "pos" : m.net < 0 ? "neg" : undefined}>
-                      {m.net > 0 ? "+" : ""}
-                      {m.net}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <div className="card">
+        <div className="card-head">
+          <h3>인원 변동 — 최근 12개월</h3>
+          <span className="unit">
+            누적 입사 {year12.inn} · 퇴사 {year12.out} · 순증 {year12.net > 0 ? "+" : ""}
+            {year12.net} · 명
+          </span>
         </div>
 
-        <div className="card">
-          <div className="card-head">
-            <h3>부서별 인원</h3>
-            <span className="unit">현원 기준 · 눌러서 필터 · 명</span>
-          </div>
-          <div className="deptlist">
-            {summary.byDept.length === 0 && !loading ? (
-              <span className="chip">데이터 없음</span>
-            ) : (
-              summary.byDept.map(([d, n]) => (
-                <button
-                  key={d}
-                  className={`chip acc chip-btn${dept === d ? " on" : ""}`}
-                  onClick={() => setDept(dept === d ? ALL : d)}
-                >
-                  {d} {n}
-                </button>
-              ))
-            )}
-          </div>
+        <MovementChart data={months} />
+
+        <div className="t-scroll">
+          <table className="mini quarters">
+            <thead>
+              <tr>
+                <th>분기</th>
+                {quarters.map((qt) => (
+                  <th key={qt.label}>{qt.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>입사</td>
+                {quarters.map((qt) => (
+                  <td key={qt.label}>{qt.inn}</td>
+                ))}
+              </tr>
+              <tr>
+                <td>퇴사</td>
+                {quarters.map((qt) => (
+                  <td key={qt.label}>{qt.out}</td>
+                ))}
+              </tr>
+              <tr>
+                <td>순증</td>
+                {quarters.map((qt) => (
+                  <td
+                    key={qt.label}
+                    className={qt.net > 0 ? "pos" : qt.net < 0 ? "neg" : undefined}
+                  >
+                    {qt.net > 0 ? "+" : ""}
+                    {qt.net}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <h3>부서별 인원</h3>
+          <span className="unit">현원 기준 · 눌러서 필터 · 명</span>
+        </div>
+        <div className="deptlist">
+          {summary.byDept.length === 0 && !loading ? (
+            <span className="chip">데이터 없음</span>
+          ) : (
+            summary.byDept.map(([d, n]) => (
+              <button
+                key={d}
+                className={`chip acc chip-btn${dept === d ? " on" : ""}`}
+                onClick={() => setDept(dept === d ? ALL : d)}
+              >
+                {d} {n}
+              </button>
+            ))
+          )}
         </div>
       </div>
 
@@ -330,7 +343,7 @@ export default function Home() {
           <h3>직원 대장</h3>
           <span className="unit">
             {filtered.length}명 표시
-            {filtered.length !== rows.length && ` · 전체 ${rows.length}명`}
+            {filtered.length !== rows.length && ` · 전체 ${rows.length}명`} · 열 제목을 눌러 정렬
           </span>
         </div>
 
@@ -345,15 +358,22 @@ export default function Home() {
             <table>
               <thead>
                 <tr>
-                  <th>사번</th>
-                  <th>이름</th>
-                  <th>소속</th>
-                  <th>부서명</th>
-                  <th>직급</th>
-                  <th>입사일</th>
-                  <th>근속</th>
-                  <th>퇴사일</th>
-                  <th>재직구분</th>
+                  {COLUMNS.map((c) => {
+                    const on = sort.key === c.key;
+                    return (
+                      <th key={c.key} aria-sort={on ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+                        <button
+                          className={`th-sort${on ? " on" : ""}`}
+                          onClick={() => toggleSort(c.key)}
+                        >
+                          {c.label}
+                          <span className="arrow" aria-hidden="true">
+                            {on ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}
+                          </span>
+                        </button>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
