@@ -2,21 +2,21 @@
 
 import { useMemo, useState } from "react";
 import CollapsibleCard from "./CollapsibleCard";
+import RegionBubbleMap from "./RegionBubbleMap";
 import { isOnBoard, type Employee } from "@/lib/supabase";
 
 /**
  * 거주지역 분포 (R18).
  *
- * 지도는 쓰지 않는다 — 24개 시·구를 지도에 찍어도 "성동구가 가장 많다"는 사실이
- * 리스트보다 더 잘 읽히지 않고, 외부 지도 라이브러리는 자체 포함 배포와
- * 개인정보 측면에서 다 손해다.
+ * 버블맵(R20)과 집계 리스트를 함께 둔다 — 지도는 "어디에 몰려 있나"를, 리스트는
+ * "정확히 몇 명인가"를 답한다. 외부 지도 라이브러리는 쓰지 않는다(자체 포함 배포).
  *
  * 개인정보 설계 고정: 시·구 단위만. 상세 주소는 저장하지도 표시하지도 않는다.
  */
 export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
   const [expanded, setExpanded] = useState(false);
 
-  const { list, unknown, onBoardCount } = useMemo(() => {
+  const { counts, list, unknown, onBoardCount } = useMemo(() => {
     const onBoardRows = rows.filter((r) => isOnBoard(r));
     const count = new Map<string, number>();
     let unknown = 0;
@@ -25,6 +25,7 @@ export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
       else count.set(r.residence, (count.get(r.residence) ?? 0) + 1);
     }
     return {
+      counts: count,
       list: [...count.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ko")),
       unknown,
       onBoardCount: onBoardRows.length,
@@ -45,6 +46,8 @@ export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
         </span>
       }
     >
+
+      <RegionBubbleMap counts={counts} total={onBoardCount} />
 
       <div className="t-scroll">
         <table>

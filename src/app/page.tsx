@@ -319,10 +319,8 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="row2 even">
-        <TurnoverByDept rows={rows} />
-        <ResidenceBreakdown rows={rows} />
-      </div>
+      <TurnoverByDept rows={rows} />
+      <ResidenceBreakdown rows={rows} />
 
       <div className="toolbar">
         <input

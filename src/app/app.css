@@ -697,3 +697,57 @@ tbody tr.rowlink:focus-visible {
 .card:has(.sec-body[hidden]) {
   padding-bottom: 14px;
 }
+
+/* ------------------------------------------------ R20 거주지역 버블맵 */
+.bubblemap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bmap {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  min-width: 560px;
+  height: auto;
+  display: block;
+}
+
+/* 색은 의미를 담지 않는다 — 전부 같은 색이고 구분은 크기로만 한다 (R16) */
+.bmap .bub {
+  fill: var(--accent);
+  fill-opacity: 0.22;
+  stroke: var(--accent-strong);
+  stroke-width: 1.5;
+}
+
+/* 인접 구는 원이 겹칠 수밖에 없다. 글자에 배경색 테두리를 둘러
+   무엇 위에 얹히든 읽히게 한다 (지도 라벨의 halo 기법). */
+.bmap .bub-n,
+.bmap .bub-label {
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  text-anchor: middle;
+}
+
+.bmap .bub-n {
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--ink-value);
+}
+
+.bmap .bub-label {
+  font-size: 11px;
+  font-weight: 500;
+  fill: var(--ink-cell);
+}
+
+.chart-legend .sw-bubble {
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.35;
+  border-color: var(--accent-strong);
+}
