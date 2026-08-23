@@ -11,6 +11,7 @@ import {
   tenureYears,
   today,
   type DisplayStatus,
+  type Department,
   type Employee,
   type EmployeeInput,
 } from "@/lib/supabase";
@@ -36,6 +37,7 @@ export default function Home() {
   const canEdit = !!session;
 
   const [rows, setRows] = useState<Employee[]>([]);
+  const [depts, setDepts] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -69,11 +71,22 @@ export default function Home() {
 
   useEffect(() => {
     load();
+    // 부서 마스터 (R13) — 목록 필터와 등록·수정 폼이 모두 여기서 부서를 가져온다
+    supabase
+      .from("departments")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => setDepts((data as Department[]) ?? []));
   }, [load]);
 
   const companies = useMemo(() => distinct(rows, "company"), [rows]);
-  const departments = useMemo(() => distinct(rows, "department"), [rows]);
   const positions = useMemo(() => distinct(rows, "position"), [rows]);
+
+  /** 폼에서 고를 수 있는 부서 — 사용 중인 것. 단 이미 그 부서인 직원은 수정 시 보여야 한다 */
+  const selectableDepts = useMemo(() => {
+    const used = new Set(rows.map((r) => r.department));
+    return depts.filter((d) => d.active || used.has(d.name));
+  }, [depts, rows]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -287,9 +300,10 @@ export default function Home() {
         </select>
         <select className="input" value={dept} onChange={(e) => setDept(e.target.value)}>
           <option value={ALL}>부서 · 전체</option>
-          {departments.map((d) => (
-            <option key={d} value={d}>
-              {d}
+          {depts.map((d) => (
+            <option key={d.code} value={d.name}>
+              {d.name}
+              {d.active ? "" : " (폐지)"}
             </option>
           ))}
         </select>
@@ -423,7 +437,7 @@ export default function Home() {
         <EmployeeForm
           employee={editing}
           companies={companies}
-          departments={departments}
+          departments={selectableDepts}
           positions={positions}
           nextEmployeeNo={nextEmployeeNo}
           onSave={save}

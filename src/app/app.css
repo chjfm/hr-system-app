@@ -316,6 +316,18 @@ th:last-child .th-sort {
   color: var(--warn);
 }
 
+.field-note {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+.input[readonly] {
+  background: var(--surface);
+  color: var(--muted);
+  cursor: default;
+}
+
 .chip.warn {
   background: var(--warn-soft);
   color: var(--warn);

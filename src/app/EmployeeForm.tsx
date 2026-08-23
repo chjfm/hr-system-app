@@ -5,6 +5,7 @@ import {
   HIRE_TYPES,
   STATUSES,
   today,
+  type Department,
   type Employee,
   type EmployeeInput,
   type Status,
@@ -13,7 +14,7 @@ import {
 type Props = {
   employee: Employee | null; // null이면 신규 등록
   companies: string[];
-  departments: string[];
+  departments: Department[];
   positions: string[];
   nextEmployeeNo: string;
   onSave: (input: EmployeeInput) => Promise<void>;
@@ -45,7 +46,7 @@ export default function EmployeeForm({
         name_en: null,
         status: "재직",
         company: companies[0] ?? "본사",
-        department: departments[0] ?? "",
+        department: departments[0]?.name ?? "",
         position: positions[0] ?? "",
         birth_date: null,
         hire_date: today(),
@@ -69,11 +70,6 @@ export default function EmployeeForm({
       form.position !== employee.position ||
       (form.status !== employee.status && form.status !== "퇴사"));
 
-  // 조직 마스터 없이 오타만 막는 절충안 — 기존에 없던 값이면 경고
-  const newDepartment =
-    form.department.trim() && !departments.includes(form.department.trim())
-      ? form.department.trim()
-      : null;
 
   /** R5·R6 — 상태와 퇴사일은 항상 함께 움직인다 */
   function setStatus(value: Status) {
@@ -201,40 +197,31 @@ export default function EmployeeForm({
 
           <div className="field">
             <label htmlFor="f-company">소속</label>
-            <input
-              id="f-company"
-              className="input"
-              list="dl-company"
-              value={form.company}
-              onChange={(e) => set({ company: e.target.value })}
-            />
-            <datalist id="dl-company">
-              {companies.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
+            {/* 부서가 소속을 결정한다 (부서는 한 소속에만 속한다) — 따로 고르게 두면 어긋난다 */}
+            <input id="f-company" className="input" value={form.company} readOnly tabIndex={-1} />
+            <span className="field-note">부서를 고르면 자동으로 정해집니다</span>
           </div>
 
           <div className="field">
             <label htmlFor="f-dept">부서명</label>
-            <input
+            {/* R13 — 자유 입력 폐지. 마스터에 있는 부서만 고를 수 있고 DB FK로도 강제된다 */}
+            <select
               id="f-dept"
-              className={`input${newDepartment ? " warn" : ""}`}
-              list="dl-dept"
+              className="input"
               value={form.department}
-              onChange={(e) => set({ department: e.target.value })}
-            />
-            <datalist id="dl-dept">
+              onChange={(e) => {
+                const picked = departments.find((d) => d.name === e.target.value);
+                // 부서를 고르면 소속도 함께 맞춘다 — 부서는 한 소속에만 속한다
+                set(picked ? { department: picked.name, company: picked.company } : { department: e.target.value });
+              }}
+            >
               {departments.map((d) => (
-                <option key={d} value={d} />
+                <option key={d.code} value={d.name}>
+                  {d.name}
+                  {d.active ? "" : " (폐지)"}
+                </option>
               ))}
-            </datalist>
-            {/* 조직 마스터 없이 오타 오염만 막는다 — 목록에 없는 값이면 그 자리에서 알린다 */}
-            {newDepartment && (
-              <span className="field-warn">
-                기존에 없던 부서입니다. 새로 만드는 게 맞는지 확인하세요.
-              </span>
-            )}
+            </select>
           </div>
 
           <div className="field">

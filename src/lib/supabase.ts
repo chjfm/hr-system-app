@@ -58,6 +58,15 @@ export type Employee = {
 
 export type EmployeeInput = Omit<Employee, "id" | "created_at">;
 
+/** 부서 마스터 (R13) — 부서명은 여기 있는 값만 쓸 수 있다 (DB FK로도 강제) */
+export type Department = {
+  code: string;
+  name: string;
+  company: string;
+  sort_order: number;
+  active: boolean;
+};
+
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
