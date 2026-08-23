@@ -830,3 +830,111 @@ tbody tr.far td:first-child::after {
   font-weight: 500;
   color: var(--ink-plan);
 }
+
+/* ------------------------------------------------ R21 스탯 위계
+   현원 하나가 이 화면의 답이다. 나머지는 그 구성과 참고 지표라
+   크기·굵기로 한 단계 내린다. */
+.statbar {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--card-gap);
+  align-items: stretch;
+}
+
+.stat-lead {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-card);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.stat-lead .k {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.stat-lead .v {
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  color: var(--accent);
+}
+
+.stat-lead .s {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat-rest {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.stat {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  border-right: 1px solid var(--line);
+}
+
+.stat:last-child {
+  border-right: 0;
+}
+
+.stat .k {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat .v {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--ink-value);
+}
+
+.stat .s {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* 참고 지표는 한 단계 더 뒤로 */
+.stat.sub {
+  background: var(--surface-2);
+}
+
+.stat.sub .v {
+  font-size: 17px;
+  color: var(--ink-cell);
+}
+
+@media (max-width: 900px) {
+  .statbar {
+    grid-template-columns: 1fr;
+  }
+  .stat-rest {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .stat:nth-child(3) {
+    border-right: 0;
+  }
+}
+
+/* R24 — 부서 칩에서 대장으로 이동할 때의 착지점.
+   툴바 바로 위에 두어 검색·필터가 함께 보이게 한다. */
+.roster-anchor {
+  scroll-margin-top: 12px;
+}

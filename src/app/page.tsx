@@ -199,6 +199,14 @@ export default function Home() {
     });
   }
 
+  /** 부서 칩으로 필터를 걸면 결과가 있는 곳까지 데려간다 */
+  function scrollToRoster() {
+    const el = document.getElementById("roster");
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+
   function toggleSort(key: SortKey) {
     setSort((s) =>
       s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
@@ -209,38 +217,70 @@ export default function Home() {
 
   return (
     <>
-      <section className="kpis kpis-6">
-        <div className="kpi lead">
+      {/* R21 — 현원이 1순위다. 나머지는 "현원이 어떻게 구성되는가"(재직·휴직·퇴사예정)와
+          참고 지표(퇴사 누적·평균 근속)로 한 단계 내렸다. */}
+      <section className="statbar">
+        <div className="stat-lead">
           <span className="k">현원</span>
           <span className="v">{summary.onBoard}</span>
-          <span className="s">재직+휴직+퇴사예정</span>
+          <span className="s">재직 + 휴직 + 퇴사예정</span>
         </div>
-        <div className="kpi">
-          <span className="k">재직</span>
-          <span className="v">{summary.byStatus.재직}</span>
-          <span className="s">근무 중</span>
-        </div>
-        <div className="kpi">
-          <span className="k">휴직</span>
-          <span className="v">{summary.byStatus.휴직}</span>
-          <span className="s">명</span>
-        </div>
-        <div className="kpi">
-          <span className="k">퇴사예정</span>
-          <span className="v">{summary.byStatus.퇴사예정}</span>
-          <span className="s">아직 재직 중</span>
-        </div>
-        <div className="kpi">
-          <span className="k">퇴사</span>
-          <span className="v">{summary.byStatus.퇴사}</span>
-          <span className="s">누적</span>
-        </div>
-        <div className="kpi">
-          <span className="k">평균 근속</span>
-          <span className="v">{summary.avgTenure.toFixed(1)}</span>
-          <span className="s">년 · 현원 기준</span>
+
+        <div className="stat-rest">
+          <div className="stat">
+            <span className="k">재직</span>
+            <span className="v">{summary.byStatus.재직}</span>
+            <span className="s">근무 중</span>
+          </div>
+          <div className="stat">
+            <span className="k">휴직</span>
+            <span className="v">{summary.byStatus.휴직}</span>
+            <span className="s">명</span>
+          </div>
+          <div className="stat">
+            <span className="k">퇴사예정</span>
+            <span className="v">{summary.byStatus.퇴사예정}</span>
+            <span className="s">아직 재직 중</span>
+          </div>
+          <div className="stat sub">
+            <span className="k">퇴사</span>
+            <span className="v">{summary.byStatus.퇴사}</span>
+            <span className="s">누적</span>
+          </div>
+          <div className="stat sub">
+            <span className="k">평균 근속</span>
+            <span className="v">{summary.avgTenure.toFixed(1)}</span>
+            <span className="s">년 · 현원 기준</span>
+          </div>
         </div>
       </section>
+
+      <div className="card">
+        <div className="card-head">
+          <h3>부서별 인원</h3>
+          <span className="unit">현원 기준 · 눌러서 필터 · 명</span>
+        </div>
+        <div className="deptlist">
+          {summary.byDept.length === 0 && !loading ? (
+            <span className="chip">데이터 없음</span>
+          ) : (
+            summary.byDept.map(([d, n]) => (
+              <button
+                key={d}
+                className={`chip acc chip-btn${dept === d ? " on" : ""}`}
+                onClick={() => {
+                  const next = dept === d ? ALL : d;
+                  setDept(next);
+                  // 칩이 대장에서 멀어져 필터가 걸린 걸 못 볼 수 있다 — 결과로 데려간다
+                  if (next !== ALL) scrollToRoster();
+                }}
+              >
+                {d} {n}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
 
       <CollapsibleCard
         id="movement"
@@ -298,30 +338,10 @@ export default function Home() {
         </div>
       </CollapsibleCard>
 
-      <div className="card">
-        <div className="card-head">
-          <h3>부서별 인원</h3>
-          <span className="unit">현원 기준 · 눌러서 필터 · 명</span>
-        </div>
-        <div className="deptlist">
-          {summary.byDept.length === 0 && !loading ? (
-            <span className="chip">데이터 없음</span>
-          ) : (
-            summary.byDept.map(([d, n]) => (
-              <button
-                key={d}
-                className={`chip acc chip-btn${dept === d ? " on" : ""}`}
-                onClick={() => setDept(dept === d ? ALL : d)}
-              >
-                {d} {n}
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-
       <TurnoverByDept rows={rows} />
       <ResidenceBreakdown rows={rows} />
+
+      <div id="roster" className="roster-anchor" />
 
       <div className="toolbar">
         <input
