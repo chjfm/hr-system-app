@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import CollapsibleCard from "./CollapsibleCard";
-import RegionBubbleMap from "./RegionBubbleMap";
+import RegionBubbleMap, { REGION_DISTANCE } from "./RegionBubbleMap";
 import { isOnBoard, type Employee } from "@/lib/supabase";
 
 /**
@@ -15,6 +15,7 @@ import { isOnBoard, type Employee } from "@/lib/supabase";
  */
 export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
   const [expanded, setExpanded] = useState(false);
+  const [order, setOrder] = useState<"count" | "dist">("count");
 
   const { counts, list, unknown, onBoardCount } = useMemo(() => {
     const onBoardRows = rows.filter((r) => isOnBoard(r));
@@ -26,13 +27,19 @@ export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
     }
     return {
       counts: count,
-      list: [...count.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ko")),
+      list: [...count.entries()]
+        .map(([area, n]) => ({ area, n, km: REGION_DISTANCE.get(area) ?? null }))
+        .sort((a, b) =>
+          order === "dist"
+            ? (b.km ?? -1) - (a.km ?? -1)
+            : b.n - a.n || a.area.localeCompare(b.area, "ko"),
+        ),
       unknown,
       onBoardCount: onBoardRows.length,
     };
-  }, [rows]);
+  }, [rows, order]);
 
-  const max = Math.max(1, ...list.map(([, n]) => n));
+  const max = Math.max(1, ...list.map((r) => r.n));
   const shown = expanded ? list : list.slice(0, 8);
 
   return (
@@ -41,10 +48,21 @@ export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
       title="거주지역 분포"
       defaultOpen={false}
       meta={
-        <span className="unit">
-          현원 {onBoardCount}명 · {list.length}개 지역
-          {unknown > 0 && ` · 미기재 ${unknown}`}
-        </span>
+        <>
+          <select
+            className="input period"
+            value={order}
+            onChange={(e) => setOrder(e.target.value as "count" | "dist")}
+            aria-label="정렬 기준"
+          >
+            <option value="count">인원 많은 순</option>
+            <option value="dist">회사에서 먼 순</option>
+          </select>
+          <span className="unit">
+            현원 {onBoardCount}명 · {list.length}개 지역
+            {unknown > 0 && ` · 미기재 ${unknown}`}
+          </span>
+        </>
       }
     >
 
@@ -57,15 +75,17 @@ export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
               <th>지역</th>
               <th className="a-right">인원</th>
               <th className="a-right">비중</th>
+              <th className="a-right">회사까지</th>
               <th>분포</th>
             </tr>
           </thead>
           <tbody>
-            {shown.map(([area, n]) => (
-              <tr key={area}>
+            {shown.map(({ area, n, km }) => (
+              <tr key={area} className={km !== null && km > 20 ? "far" : undefined}>
                 <td>{area}</td>
                 <td className="a-right">{n}</td>
                 <td className="a-right">{((n / onBoardCount) * 100).toFixed(1)}%</td>
+                <td className="a-right">{km === null ? "–" : `${km}km`}</td>
                 <td>
                   {/* 수치를 이미 왼쪽에 적었으므로 막대는 보조 표현이다 (R16) */}
                   <span className="track bar-cell" aria-hidden="true">

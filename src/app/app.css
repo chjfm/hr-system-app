@@ -599,22 +599,21 @@ tbody tr.rowlink:focus-visible {
   outline-offset: -2px;
 }
 
-/* ------------------------------------------------ R22 대비 보정
-   design-tokens.css 는 실측 정본이라 값을 고치지 않는다(브리프 규칙).
-   대신 "글자가 얹히는 자리"에만 쓸 파생 색을 여기서 정의한다.
-   면·테두리는 원래 주황(#ff6b00)을 그대로 쓰므로 브랜드 인상은 유지된다.
-   각 값은 AA(4.5:1)를 넘는 것 중 가장 밝은 쪽으로 골랐다. */
+/* ------------------------------------------------ R22-2 대비 보정 (방식 전환)
+   1차에서 강조색을 어둡게 낮췄더니 색이 탁해졌다. 브랜드 원색은 면에 그대로 살리고
+   대비는 글자 쪽에서 해결한다 — 밝은 주황 위 진한 글자가 흰 글자보다 훨씬 잘 읽힌다.
+   design-tokens.css 원본은 여전히 건드리지 않는다. 각 조합 실측 4.5:1 이상. */
 :root {
-  --accent-strong: #b84e00; /* 흰 글씨 5.09:1 — primary 버튼 배경 */
-  --ink-ok:        #15803d; /* good-soft 위 4.57:1 */
-  --ink-plan:      #8a5400; /* warn-soft 위 5.92:1 */
-  --ink-no:        #c62828; /* bad-soft 위 4.92:1 */
-  --ink-acc:       #b84e00; /* accent-soft 위 4.74:1 */
+  --on-accent-ink: #2b1600; /* #ff6b00 위 6.04:1 */
+  --ink-ok:        #14532d; /* good-soft 위 8.30:1 */
+  --ink-plan:      #7a4a00; /* warn-soft 위 7.06:1 */
+  --ink-no:        #a31d16; /* bad-soft 위 6.69:1 */
+  --ink-acc:       #983f00; /* accent-soft 위 6.43:1 · 흰 배경 위 6.43:1 */
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --accent-strong: var(--accent);
+    --on-accent-ink: var(--on-accent);
     --ink-ok: var(--good);
     --ink-plan: var(--warn);
     --ink-no: var(--bad);
@@ -622,14 +621,17 @@ tbody tr.rowlink:focus-visible {
   }
 }
 
+/* 배경은 원색 주황 그대로 — 글자만 진하게 */
 .btn.primary {
-  background: var(--accent-strong);
-  border-color: var(--accent-strong);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent-ink);
+  font-weight: 700;
 }
 
 .btn.primary:hover {
   background: var(--surface);
-  color: var(--accent-strong);
+  color: var(--ink-acc);
 }
 
 .chip.ok   { color: var(--ink-ok); }
@@ -637,22 +639,21 @@ tbody tr.rowlink:focus-visible {
 .chip.no   { color: var(--ink-no); }
 .chip.acc  { color: var(--ink-acc); }
 
-/* 선택된 부서 칩은 면이 주황으로 채워진다 — 그 위 글씨도 AA를 넘어야 한다 */
+/* 선택된 부서 칩도 원색 면 + 진한 글자 */
 .chip-btn.on {
-  background: var(--accent-strong);
-  border-color: var(--accent-strong);
-  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent-ink);
+  font-weight: 700;
 }
 
-/* 정렬 중인 열 제목 — 흰 배경 위 주황 글씨는 2.86:1이라 미달이었다 */
+/* 흰 배경 위 주황 글씨는 2.86:1이라 미달 — 같은 계열의 진한 색으로 */
 .th-sort.on,
 .th-sort.on .arrow,
 .th-sort:hover {
   color: var(--ink-acc);
 }
 
-/* KPI lead 값은 16px/700 이라 대형 텍스트 기준(3:1)에는 들지만,
-   본문 기준으로도 읽히게 파생색을 쓴다 */
 .kpi.lead .v {
   color: var(--ink-acc);
 }
@@ -725,7 +726,7 @@ tbody tr.rowlink:focus-visible {
 .bmap .bub {
   fill: var(--accent);
   fill-opacity: 0.22;
-  stroke: var(--accent-strong);
+  stroke: var(--ink-acc);
   stroke-width: 1.5;
 }
 
@@ -756,5 +757,73 @@ tbody tr.rowlink:focus-visible {
   border-radius: 50%;
   background: var(--accent);
   opacity: 0.35;
-  border-color: var(--accent-strong);
+  border-color: var(--ink-acc);
+}
+
+/* ------------------------------------------------ R23 회사 기점 거리 */
+/* 등거리 링 — 가장 뒤에 옅게 깔린다. 색이 아니라 점선으로 구분한다. */
+.bmap .ring {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 5 5;
+}
+
+.bmap .ring-label {
+  font-size: 10px;
+  fill: var(--muted);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* 회사는 색이 아니라 십자 모양으로 구분한다 (R16) */
+.bmap .hq-dot {
+  fill: var(--surface);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.bmap .hq-cross {
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.bmap .hq-label {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--ink);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.chart-legend .sw-hq {
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+}
+
+.chart-legend .sw-ring {
+  background: none;
+  border: 1px dashed var(--line-strong);
+  border-radius: 50%;
+}
+
+/* 20km 밖 지역 — 기숙사·통근버스 검토 대상. 색만이 아니라 굵기로도 구분 */
+tbody tr.far td:first-child {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+tbody tr.far td:first-child::after {
+  content: " · 20km 밖";
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-plan);
 }
