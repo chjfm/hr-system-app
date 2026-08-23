@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import TopBar from "./TopBar";
 import "./design-tokens.css";
 import "./app.css";
 
@@ -17,10 +18,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body>
-        <header className="topbar">
-          <span className="brand">직원 정보 관리 시스템</span>
-          <span className="chip">데모 · 더미데이터</span>
-        </header>
+        <TopBar />
         <main className="page">{children}</main>
       </body>
     </html>

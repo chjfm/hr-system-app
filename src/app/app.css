@@ -260,6 +260,35 @@ table.mini td:last-child {
   color: var(--ink-cell);
 }
 
+.tl-actor {
+  font-size: 10px;
+  color: var(--faint);
+}
+
+/* 로그인 모달은 필드가 적어 좁게 */
+.modal.narrow {
+  max-width: 420px;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.primary:disabled:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.topbar .grow {
+  margin-left: auto;
+}
+
 .callout.error {
   border-left-color: var(--bad);
   color: var(--bad);

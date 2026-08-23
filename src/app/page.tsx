@@ -15,6 +15,7 @@ import {
   type EmployeeInput,
 } from "@/lib/supabase";
 import { downloadCsv } from "@/lib/csv";
+import { useSession } from "./AuthBar";
 import EmployeeDetail from "./EmployeeDetail";
 import EmployeeForm from "./EmployeeForm";
 
@@ -28,6 +29,9 @@ const STATUS_CHIP: Record<DisplayStatus, string> = {
 const ALL = "전체";
 
 export default function Home() {
+  const { session } = useSession();
+  const canEdit = !!session;
+
   const [rows, setRows] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -311,7 +315,12 @@ export default function Home() {
         >
           엑셀 내보내기 ({filtered.length})
         </button>
-        <button className="btn primary" onClick={() => setCreating(true)}>
+        <button
+          className="btn primary"
+          disabled={!canEdit}
+          title={canEdit ? undefined : "로그인이 필요합니다"}
+          onClick={() => setCreating(true)}
+        >
           + 신규 입사자 등록
         </button>
       </div>
@@ -381,6 +390,7 @@ export default function Home() {
       {viewing && !editing && (
         <EmployeeDetail
           employee={viewing}
+          canEdit={canEdit}
           onEdit={() => setEditing(viewing)}
           onClose={() => setViewing(null)}
         />

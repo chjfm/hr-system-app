@@ -27,14 +27,40 @@ const STATUS_CHIP: Record<DisplayStatus, string> = {
   퇴사: "chip no",
 };
 
+type ChangeRow = {
+  id: string;
+  field: string;
+  old_value: string | null;
+  new_value: string | null;
+  actor_email: string | null;
+  changed_at: string;
+};
+
+const FIELD_LABEL: Record<string, string> = {
+  name_ko: "한글성명",
+  name_en: "영문성명",
+  company: "소속",
+  department: "부서명",
+  position: "직급",
+  status: "재직구분",
+  birth_date: "생년월일",
+  hire_date: "입사일",
+  resign_date: "퇴사일",
+  email: "메일계정",
+  phone: "휴대전화",
+  hire_type: "채용구분",
+};
+
 type Props = {
   employee: Employee;
+  canEdit: boolean;
   onEdit: () => void;
   onClose: () => void;
 };
 
-export default function EmployeeDetail({ employee, onEdit, onClose }: Props) {
+export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: Props) {
   const [history, setHistory] = useState<Appointment[] | null>(null);
+  const [changes, setChanges] = useState<ChangeRow[] | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -45,6 +71,15 @@ export default function EmployeeDetail({ employee, onEdit, onClose }: Props) {
       .order("appointed_on", { ascending: false })
       .then(({ data }) => {
         if (alive) setHistory((data as Appointment[]) ?? []);
+      });
+    supabase
+      .from("change_log")
+      .select("*")
+      .eq("employee_no", employee.employee_no)
+      .order("changed_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        if (alive) setChanges((data as ChangeRow[]) ?? []);
       });
     return () => {
       alive = false;
@@ -122,9 +157,48 @@ export default function EmployeeDetail({ employee, onEdit, onClose }: Props) {
                 <span className="tl-date">{h.appointed_on}</span>
                 <span className={KIND_CHIP[h.kind]}>{h.kind}</span>
                 <span className="tl-detail">{h.detail}</span>
+                {h.actor_email && <span className="tl-actor">입력 {h.actor_email}</span>}
               </li>
             ))}
           </ol>
+        )}
+
+        <div className="card-head" style={{ marginTop: 4 }}>
+          <h3>변경 기록</h3>
+          <span className="unit">
+            {changes === null ? "불러오는 중…" : `${changes.length}건 · 최신 20건`}
+          </span>
+        </div>
+
+        {changes === null ? (
+          <div className="t-empty">불러오는 중…</div>
+        ) : changes.length === 0 ? (
+          <div className="t-empty">이 시스템 도입 이후 변경된 항목이 없습니다.</div>
+        ) : (
+          <div className="t-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>변경 시각</th>
+                  <th>항목</th>
+                  <th>이전</th>
+                  <th>변경 후</th>
+                  <th>변경자</th>
+                </tr>
+              </thead>
+              <tbody>
+                {changes.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.changed_at.slice(0, 16).replace("T", " ")}</td>
+                    <td>{FIELD_LABEL[c.field] ?? c.field}</td>
+                    <td>{c.old_value ?? "–"}</td>
+                    <td>{c.new_value ?? "–"}</td>
+                    <td>{c.actor_email ?? "–"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         <div className="callout">
@@ -133,11 +207,14 @@ export default function EmployeeDetail({ employee, onEdit, onClose }: Props) {
         </div>
 
         <div className="toolbar">
+          {!canEdit && (
+            <span className="hint">수정하려면 우측 상단에서 로그인하세요</span>
+          )}
           <span className="grow" />
           <button className="btn" onClick={onClose}>
             닫기
           </button>
-          <button className="btn primary" onClick={onEdit}>
+          <button className="btn primary" onClick={onEdit} disabled={!canEdit}>
             정보 수정
           </button>
         </div>

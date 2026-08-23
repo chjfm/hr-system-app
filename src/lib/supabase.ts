@@ -32,6 +32,8 @@ export type Appointment = {
   appointed_on: string;
   kind: "입사" | "승진" | "발령" | "휴직" | "복직" | "퇴사";
   detail: string;
+  /** 이 발령을 입력한 계정. 시드 데이터는 null. */
+  actor_email: string | null;
 };
 
 /** 직원 기본정보. 주민번호·병역·장애는 스키마에 없다 (R9). */
