@@ -44,7 +44,26 @@
   gap: 6px;
 }
 
-/* 표 안의 상태 칩은 좌측 정렬이 자연스럽다 */
+/* 직원 대장 — 토큰의 표 스타일은 숫자 표 기준(우측 정렬)이다.
+   이 화면은 텍스트 표이므로 날짜 열만 우측에 두고 나머지는 좌측으로 돌린다. */
+table th,
+table td {
+  text-align: left;
+}
+
+table th:nth-child(5),
+table td:nth-child(5),
+table th:nth-child(6),
+table td:nth-child(6) {
+  text-align: right;
+}
+
+table th:last-child,
+table td:last-child {
+  text-align: center;
+  width: 72px;
+}
+
 td .chip {
   vertical-align: middle;
 }
