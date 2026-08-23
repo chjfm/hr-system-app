@@ -13,7 +13,6 @@ import {
 
 type Props = {
   employee: Employee | null; // null이면 신규 등록
-  companies: string[];
   departments: Department[];
   positions: string[];
   nextEmployeeNo: string;
@@ -23,7 +22,6 @@ type Props = {
 
 export default function EmployeeForm({
   employee,
-  companies,
   departments,
   positions,
   nextEmployeeNo,
@@ -45,7 +43,8 @@ export default function EmployeeForm({
         name_ko: "",
         name_en: null,
         status: "재직",
-        company: companies[0] ?? "본사",
+        // 소속은 부서가 결정한다 — 각각 따로 정하면 어긋난 상태로 폼이 열린다
+        company: departments[0]?.company ?? "",
         department: departments[0]?.name ?? "",
         position: positions[0] ?? "",
         birth_date: null,
@@ -57,7 +56,7 @@ export default function EmployeeForm({
         effective_date: null,
       });
     }
-  }, [employee, companies, departments, positions, nextEmployeeNo]);
+  }, [employee, departments, positions, nextEmployeeNo]);
 
   if (!form) return null;
 

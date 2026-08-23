@@ -436,7 +436,6 @@ export default function Home() {
       {(creating || editing) && (
         <EmployeeForm
           employee={editing}
-          companies={companies}
           departments={selectableDepts}
           positions={positions}
           nextEmployeeNo={nextEmployeeNo}
