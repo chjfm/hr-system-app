@@ -189,7 +189,7 @@ export default function Home() {
         <div className="card">
           <div className="card-head">
             <h3>인원 변동</h3>
-            <span className="unit">퇴사일 도래분만 집계 · 명</span>
+            <span className="unit">퇴사일 도래분만 · 명</span>
           </div>
           <div className="t-scroll">
             <table className="mini">
@@ -202,24 +202,25 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>이번 달 ({movement.label.month})</td>
-                  <td>{movement.month.inn}</td>
-                  <td>{movement.month.out}</td>
-                  <td className={movement.month.net >= 0 ? "pos" : "neg"}>
-                    {movement.month.net >= 0 ? "+" : ""}
-                    {movement.month.net}
-                  </td>
-                </tr>
-                <tr>
-                  <td>올해 ({movement.label.year})</td>
-                  <td>{movement.year.inn}</td>
-                  <td>{movement.year.out}</td>
-                  <td className={movement.year.net >= 0 ? "pos" : "neg"}>
-                    {movement.year.net >= 0 ? "+" : ""}
-                    {movement.year.net}
-                  </td>
-                </tr>
+                {(
+                  [
+                    ["이번 달", movement.label.month, movement.month],
+                    ["올해", movement.label.year, movement.year],
+                  ] as const
+                ).map(([label, period, m]) => (
+                  <tr key={label}>
+                    <td>
+                      {label}
+                      <span className="sub-label">{period}</span>
+                    </td>
+                    <td>{m.inn}</td>
+                    <td>{m.out}</td>
+                    <td className={m.net > 0 ? "pos" : m.net < 0 ? "neg" : undefined}>
+                      {m.net > 0 ? "+" : ""}
+                      {m.net}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

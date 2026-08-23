@@ -83,9 +83,9 @@ td .chip {
 /* 인원 변동 + 부서별 인원 나란히 */
 .row2 {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 280px 1fr;
   gap: var(--card-gap);
-  align-items: start;
+  align-items: stretch;
 }
 
 @media (max-width: 780px) {
@@ -95,21 +95,32 @@ td .chip {
 }
 
 /* 인원 변동 표 — 열이 4개뿐이라 첫 열만 넓게 */
-table.mini th,
-table.mini td {
-  white-space: nowrap;
+table.mini th:first-child,
+table.mini td:first-child {
+  padding-left: 0;
 }
 
 table.mini th:not(:first-child),
 table.mini td:not(:first-child) {
   text-align: right;
-  width: 46px;
+  width: 40px;
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 table.mini th:last-child,
 table.mini td:last-child {
   text-align: right;
-  width: 52px;
+  width: 44px;
+  padding-right: 0;
+}
+
+/* 기간 라벨 아래 붙는 실제 연월 */
+.sub-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--faint);
 }
 
 /* 모달 안에 중첩되는 보조 카드 (발령일자 블록) */
