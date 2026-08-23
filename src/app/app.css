@@ -126,8 +126,44 @@ table.mini td:last-child {
 /* 모달 안에 중첩되는 보조 카드 (발령일자 블록) */
 .card.sub {
   border-color: var(--accent);
-  gap: 12px;
+  background: var(--accent-soft);
+  gap: 10px;
   padding: 14px 16px;
+}
+
+.eff-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.eff-row .input {
+  flex: 0 0 150px;
+  background: var(--surface);
+}
+
+.eff-hint {
+  flex: 1 1 260px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.eff-hint b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* 입력란 옆에서 바로 알리는 경고 */
+.input.warn {
+  border-color: var(--warn);
+}
+
+.field-warn {
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--warn);
 }
 
 .chip.warn {

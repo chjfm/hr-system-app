@@ -139,6 +139,31 @@ export default function EmployeeForm({
           <span className="unit">필수 · 사번 / 성명 / 부서 / 직급 / 입사일</span>
         </div>
 
+        {/* 변경이 생겨 이력이 남게 되면 발령일자를 맨 위에서 먼저 묻는다 —
+            아래에 두면 스크롤해야 보여서 그냥 오늘 날짜로 저장돼 버린다 */}
+        {willLogAppointment && (
+          <div className="card sub">
+            <div className="card-head">
+              <h3>발령일자</h3>
+              <span className="unit">이 변경이 효력을 갖는 날 · 이력에 이 날짜로 기록됩니다</span>
+            </div>
+            <div className="eff-row">
+              <input
+                id="f-eff"
+                type="date"
+                className="input"
+                value={form.effective_date ?? ""}
+                min={form.hire_date || undefined}
+                onChange={(e) => set({ effective_date: e.target.value || null })}
+              />
+              <span className="eff-hint">
+                발령은 대개 오늘이 아닙니다 — <b>9월 1일자 발령을 미리 입력</b>하거나 지난 발령을
+                소급 입력할 수 있습니다. 이 날짜가 근속·승진연한 산정의 근거가 됩니다.
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="formgrid">
           <div className="field">
             <label htmlFor="f-no">사번</label>
@@ -194,7 +219,7 @@ export default function EmployeeForm({
             <label htmlFor="f-dept">부서명</label>
             <input
               id="f-dept"
-              className="input"
+              className={`input${newDepartment ? " warn" : ""}`}
               list="dl-dept"
               value={form.department}
               onChange={(e) => set({ department: e.target.value })}
@@ -204,6 +229,12 @@ export default function EmployeeForm({
                 <option key={d} value={d} />
               ))}
             </datalist>
+            {/* 조직 마스터 없이 오타 오염만 막는다 — 목록에 없는 값이면 그 자리에서 알린다 */}
+            {newDepartment && (
+              <span className="field-warn">
+                기존에 없던 부서입니다. 새로 만드는 게 맞는지 확인하세요.
+              </span>
+            )}
           </div>
 
           <div className="field">
@@ -313,40 +344,6 @@ export default function EmployeeForm({
             />
           </div>
         </div>
-
-        {willLogAppointment && (
-          <div className="card sub">
-            <div className="card-head">
-              <h3>발령일자</h3>
-              <span className="unit">이 변경이 효력을 갖는 날 · 이력에 이 날짜로 기록됩니다</span>
-            </div>
-            <div className="formgrid">
-              <div className="field">
-                <label htmlFor="f-eff">발령일자</label>
-                <input
-                  id="f-eff"
-                  type="date"
-                  className="input"
-                  value={form.effective_date ?? ""}
-                  min={form.hire_date || undefined}
-                  onChange={(e) => set({ effective_date: e.target.value || null })}
-                />
-              </div>
-            </div>
-            <div className="callout">
-              발령은 대개 오늘이 아닙니다 — <b>9월 1일자 발령을 오늘 미리 입력</b>하거나
-              지난 발령을 소급 입력할 수 있습니다. 이 날짜가 근속·승진연한 산정의 근거가 됩니다.
-            </div>
-          </div>
-        )}
-
-        {newDepartment && (
-          <div className="callout warn">
-            <b>&lsquo;{newDepartment}&rsquo;은(는) 기존에 없던 부서입니다.</b> 새 부서를 만드는 게
-            맞다면 그대로 저장하시고, 오타라면 아래 기존 부서에서 고르세요 —{" "}
-            {departments.join(" · ")}
-          </div>
-        )}
 
         <div className="callout">
           <b>재직구분을 &lsquo;퇴사&rsquo;로 바꾸면 퇴사일이 필수가 됩니다.</b> 부서·직급을 바꾸거나
