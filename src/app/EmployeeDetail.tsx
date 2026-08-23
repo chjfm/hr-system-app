@@ -9,6 +9,7 @@ import {
   type Appointment,
   type DisplayStatus,
   type Employee,
+  type Performance,
 } from "@/lib/supabase";
 
 const KIND_CHIP: Record<Appointment["kind"], string> = {
@@ -61,6 +62,7 @@ type Props = {
 export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: Props) {
   const [history, setHistory] = useState<Appointment[] | null>(null);
   const [changes, setChanges] = useState<ChangeRow[] | null>(null);
+  const [perf, setPerf] = useState<Performance[] | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -80,6 +82,15 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
       .limit(20)
       .then(({ data }) => {
         if (alive) setChanges((data as ChangeRow[]) ?? []);
+      });
+    // R17 성과 이력 — 발령이력과 나란히 보여준다
+    supabase
+      .from("performance")
+      .select("*")
+      .eq("employee_no", employee.employee_no)
+      .order("started_on", { ascending: false })
+      .then(({ data }) => {
+        if (alive) setPerf((data as Performance[]) ?? []);
       });
     return () => {
       alive = false;
@@ -103,6 +114,7 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
     ["퇴사일", employee.resign_date ?? "–"],
     ["메일계정", employee.email ?? "–"],
     ["휴대전화", employee.phone ?? "–"],
+    ["거주지역", employee.residence ?? "–"],
   ];
 
   return (
@@ -161,6 +173,47 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
               </li>
             ))}
           </ol>
+        )}
+
+        <div className="card-head" style={{ marginTop: 4 }}>
+          <h3>성과 이력</h3>
+          <span className="unit">
+            {perf === null ? "불러오는 중…" : `${perf.length}건 · 최신순`}
+          </span>
+        </div>
+
+        {perf === null ? (
+          <div className="t-empty">불러오는 중…</div>
+        ) : perf.length === 0 ? (
+          <div className="t-empty">기록된 수행 이력이 없습니다.</div>
+        ) : (
+          <div className="t-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>기간</th>
+                  <th>프로젝트 · 업무</th>
+                  <th>역할</th>
+                  <th>기여</th>
+                </tr>
+              </thead>
+              <tbody>
+                {perf.map((r) => (
+                  <tr key={r.id}>
+                    <td className="nowrap">
+                      {r.started_on}
+                      <span className="sub-label">{r.ended_on ?? "진행 중"}</span>
+                    </td>
+                    <td>{r.project}</td>
+                    <td>
+                      <span className="chip">{r.role}</span>
+                    </td>
+                    <td>{r.contribution ?? "–"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         <div className="card-head" style={{ marginTop: 4 }}>

@@ -21,6 +21,7 @@ import { monthlyMovement, quarterly } from "@/lib/movement";
 import { useSession } from "./AuthBar";
 import MovementChart from "./MovementChart";
 import TurnoverByDept from "./TurnoverByDept";
+import ResidenceBreakdown from "./ResidenceBreakdown";
 import BulkTransfer from "./BulkTransfer";
 import EmployeeDetail from "./EmployeeDetail";
 import EmployeeForm from "./EmployeeForm";
@@ -316,7 +317,10 @@ export default function Home() {
         </div>
       </div>
 
-      <TurnoverByDept rows={rows} />
+      <div className="row2 even">
+        <TurnoverByDept rows={rows} />
+        <ResidenceBreakdown rows={rows} />
+      </div>
 
       <div className="toolbar">
         <input

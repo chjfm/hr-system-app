@@ -53,10 +53,23 @@ export type Employee = {
   phone: string | null;
   hire_type: string | null;
   effective_date: string | null;
+  /** R18 — 시·구 단위만. 상세 주소는 저장하지 않는다 (R9) */
+  residence: string | null;
   created_at: string;
 };
 
 export type EmployeeInput = Omit<Employee, "id" | "created_at">;
+
+/** 성과 이력 (R17) — 사실 기록만. 평가 등급·점수는 두지 않는다 */
+export type Performance = {
+  id: string;
+  employee_no: string;
+  project: string;
+  role: string;
+  started_on: string;
+  ended_on: string | null;
+  contribution: string | null;
+};
 
 /** 부서 마스터 (R13) — 부서명은 여기 있는 값만 쓸 수 있다 (DB FK로도 강제) */
 export type Department = {

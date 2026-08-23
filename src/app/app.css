@@ -556,3 +556,18 @@ select.input {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* 퇴사 집계 · 거주지역 분포를 같은 너비로 나란히 */
+.row2.even {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 900px) {
+  .row2.even {
+    grid-template-columns: 1fr;
+  }
+}
+
+td.nowrap {
+  white-space: nowrap;
+}

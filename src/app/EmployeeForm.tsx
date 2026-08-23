@@ -53,6 +53,7 @@ export default function EmployeeForm({
         email: null,
         phone: null,
         hire_type: "신입",
+        residence: null,
         effective_date: null,
       });
     }
@@ -317,6 +318,18 @@ export default function EmployeeForm({
               onChange={(e) => set({ email: e.target.value })}
               placeholder="gildong.hong@gaon.co.kr"
             />
+          </div>
+
+          <div className="field">
+            <label htmlFor="f-res">거주지역</label>
+            <input
+              id="f-res"
+              className="input"
+              value={form.residence ?? ""}
+              onChange={(e) => set({ residence: e.target.value })}
+              placeholder="서울 성동구"
+            />
+            <span className="field-note">시·구 단위만 — 상세 주소는 저장하지 않습니다</span>
           </div>
 
           <div className="field">
