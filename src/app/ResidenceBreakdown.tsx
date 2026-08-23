@@ -39,6 +39,7 @@ export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
     <CollapsibleCard
       id="residence"
       title="거주지역 분포"
+      defaultOpen={false}
       meta={
         <span className="unit">
           현원 {onBoardCount}명 · {list.length}개 지역

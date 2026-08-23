@@ -69,6 +69,7 @@ export default function TurnoverByDept({ rows }: { rows: Employee[] }) {
     <CollapsibleCard
       id="turnover"
       title="부서별 퇴사"
+      defaultOpen={false}
       meta={
         <>
           <select
