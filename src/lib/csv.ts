@@ -57,7 +57,8 @@ export function toCsv(rows: Employee[]): string {
 
 export function downloadCsv(rows: Employee[], filename: string): void {
   // 엑셀이 한글 CSV를 UTF-8로 인식하려면 BOM이 필요하다. 없으면 전부 깨진다.
-  const blob = new Blob(["﻿" + toCsv(rows)], { type: "text/csv;charset=utf-8;" });
+  // 리터럴로 넣으면 소스에 보이지 않는 문자가 남으므로 이스케이프로 쓴다.
+  const blob = new Blob(["\uFEFF" + toCsv(rows)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
