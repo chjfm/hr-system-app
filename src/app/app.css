@@ -621,11 +621,13 @@ tbody tr.rowlink:focus-visible {
   }
 }
 
-/* 배경은 원색 주황 그대로 — 글자만 진하게 */
+/* R22-3 — 사용자 확정 예외.
+   버튼 글자는 흰색으로 되돌린다. 실측 2.86:1 로 AA(4.5:1)에도 대형 텍스트
+   기준(3:1)에도 못 미치지만, 가독 체감과 브랜드 인상을 우선한 결정이다. */
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--on-accent-ink);
+  color: var(--on-accent);
   font-weight: 700;
 }
 
@@ -654,8 +656,9 @@ tbody tr.rowlink:focus-visible {
   color: var(--ink-acc);
 }
 
+/* R22-3 — 사용자 확정 예외. 현원 숫자는 원색 주황(2.86:1). 위와 같은 근거. */
 .kpi.lead .v {
-  color: var(--ink-acc);
+  color: var(--accent);
 }
 
 /* ------------------------------------------------ R19 섹션 접기/펴기 */
