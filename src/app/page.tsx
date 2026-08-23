@@ -245,6 +245,7 @@ export default function Home() {
       <CollapsibleCard
         id="movement"
         title="인원 변동 — 최근 12개월"
+        defaultOpen={false}
         meta={
           <span className="unit">
             누적 입사 {year12.inn} · 퇴사 {year12.out} · 순증 {year12.net > 0 ? "+" : ""}

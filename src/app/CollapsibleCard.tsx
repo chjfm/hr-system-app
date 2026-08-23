@@ -7,32 +7,38 @@ const PREFIX = "ai_people.section.";
 /**
  * 대시보드 섹션 접기/펴기 (R19).
  *
- * 기본은 펼침. 마지막 상태를 localStorage 에 남겨 다시 열었을 때 그대로 보인다.
+ * 초기값은 섹션마다 defaultOpen 으로 정하고, 마지막 상태를 localStorage 에 남겨
+ * 다시 열었을 때 그대로 보인다. 저장값이 있으면 그쪽이 초기값을 덮는다.
  * 저장이 막힌 환경(시크릿 창·사이트 데이터 차단)에서는 읽기·쓰기가 예외를 던지므로
- * 전부 try/catch 로 감싸고, 값이 없으면 펼침으로 그린다.
+ * 전부 try/catch 로 감싸고, 값을 못 읽으면 defaultOpen 그대로 그린다.
  */
 export default function CollapsibleCard({
   id,
   title,
   meta,
+  defaultOpen = true,
   children,
 }: {
   id: string;
   title: string;
   meta?: ReactNode;
+  /** 저장된 상태가 없을 때의 초기값. 저장값이 있으면 그쪽이 이긴다. */
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
   const panelId = useId();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(defaultOpen);
   // 서버 렌더와 첫 클라이언트 렌더를 맞춘 뒤에 저장값을 적용한다
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(PREFIX + id);
+      // 저장값이 있으면 그것이 기본값을 덮는다 — 사용자가 마지막에 둔 상태가 우선
       if (saved === "0") setOpen(false);
+      else if (saved === "1") setOpen(true);
     } catch {
-      // 저장소를 못 읽는 환경 — 기본값(펼침)으로 둔다
+      // 저장소를 못 읽는 환경 — defaultOpen 그대로 둔다
     }
     setHydrated(true);
   }, [id]);
@@ -49,7 +55,7 @@ export default function CollapsibleCard({
     });
   }
 
-  const shown = hydrated ? open : true;
+  const shown = hydrated ? open : defaultOpen;
 
   return (
     <section className="card">
