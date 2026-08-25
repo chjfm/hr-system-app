@@ -316,6 +316,8 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
         </div>
         <div className="hint">
           {employee.company} · {employee.department} · {employee.position} · 근속 {tenure}
+          {/* 퇴사자는 언제 나갔는지가 첫 질문이다 — 요약줄에서 즉답한다 (이슈 #4) */}
+          {ds === "퇴사" && employee.resign_date && ` · 퇴사 ${employee.resign_date}`}
         </div>
 
         {ds === "퇴사예정" && (
@@ -404,15 +406,16 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
                   <tbody>
                     {perf.map((r) => (
                       <tr key={r.id}>
-                        <td className="nowrap">
+                        {/* 날짜가 표의 주인공이 아니다 — 보통 굵기로 위계를 내린다 (이슈 #2) */}
+                        <td className="nowrap date-cell">
                           {r.started_on}
                           <span className="sub-label">{r.ended_on ?? "진행 중"}</span>
                         </td>
-                        <td>{r.project}</td>
+                        <td className="wrap">{r.project}</td>
                         <td>
                           <span className="chip">{r.role}</span>
                         </td>
-                        <td>{r.contribution ?? "–"}</td>
+                        <td className="wrap">{r.contribution ?? "–"}</td>
                       </tr>
                     ))}
                   </tbody>

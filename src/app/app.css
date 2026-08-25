@@ -686,6 +686,19 @@ td.ph-cell {
   flex: 0 0 96px;
 }
 
+/* 성과 표 날짜 — 굵기를 내려 위계 역전 해소 (이슈 #2) */
+.panel td.date-cell {
+  font-weight: 400;
+  font-size: 13px;
+}
+
+/* 성과 표를 480px 패널 안에 스크롤 없이 — 텍스트 열은 줄바꿈 허용 (이슈 #3) */
+.panel table td.wrap {
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
 /* ------------------------------------------------ 표 재직구분 — 점+텍스트
    158행에 색 배지를 깔면 표가 시끄럽다. 상태는 점 하나와 글자로 충분하다. */
 .st {
