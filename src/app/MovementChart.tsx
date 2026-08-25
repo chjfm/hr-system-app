@@ -33,13 +33,13 @@ function barPath(x: number, w: number, len: number, up: boolean): string {
 }
 
 /**
- * 인원 변동 12개월 추이 (R12 · R25).
+ * 인원 변동 12개월 추이 (R12 · R25 · 260825 차트 감리).
  *
- * 두 계열을 색으로 나누지 않는다 — 같은 강조색에 입사는 채움, 퇴사는 아웃라인이고
- * 축 위/아래 방향으로도 갈린다. 색을 구분하지 못해도 읽힌다 (R16).
+ * 입사 = 주황 채움, 퇴사 = 회색 채움 — 색과 축 위/아래 방향이 함께 갈리므로
+ * 색을 구분하지 못해도 읽힌다 (R16). 같은 색의 채움/아웃라인 구분은 시각 잡음이라 버렸다.
  *
- * 값이 0인 달도 0선 위에 짧은 스텁을 남긴다. 빈칸으로 두면 "데이터가 없다"로 읽히고
- * 12개월의 리듬도 끊긴다.
+ * 수치는 호버 툴팁과 분기 표가 담당한다 — 모든 막대에 라벨을 달면 라벨이 아니라 노이즈다.
+ * 값이 0인 달은 빈 자리가 정답이다.
  */
 export default function MovementChart({ data }: { data: MonthPoint[] }) {
   const [hover, setHover] = useState<number | null>(null);
@@ -88,28 +88,8 @@ export default function MovementChart({ data }: { data: MonthPoint[] }) {
             const hOut = scale(d.out);
             return (
               <g key={d.month} className={on ? "col on" : "col"}>
-                {/* 값이 0이어도 0선 위에 스텁을 남겨 리듬을 유지한다 */}
-                {d.inn > 0 ? (
-                  <path d={barPath(x, BAR_W, hIn, true)} className="bar-in" />
-                ) : (
-                  <rect x={x} y={MID - 3} width={BAR_W} height={3} rx={1.5} className="stub" />
-                )}
-                {d.out > 0 ? (
-                  <path d={barPath(x, BAR_W, hOut, false)} className="bar-out" />
-                ) : (
-                  <rect x={x} y={MID} width={BAR_W} height={3} rx={1.5} className="stub" />
-                )}
-
-                {d.inn > 0 && (
-                  <text x={x + BAR_W / 2} y={MID - hIn - 9} className="val">
-                    {d.inn}
-                  </text>
-                )}
-                {d.out > 0 && (
-                  <text x={x + BAR_W / 2} y={MID + hOut + 18} className="val">
-                    {d.out}
-                  </text>
-                )}
+                {d.inn > 0 && <path d={barPath(x, BAR_W, hIn, true)} className="bar-in" />}
+                {d.out > 0 && <path d={barPath(x, BAR_W, hOut, false)} className="bar-out" />}
 
                 <text x={x + BAR_W / 2} y={H - 28} className="ax-m">
                   {d.month.slice(5)}

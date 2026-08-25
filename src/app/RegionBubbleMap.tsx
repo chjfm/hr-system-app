@@ -46,6 +46,9 @@ export default function RegionBubbleMap({
   const outer = drawOrder.filter((p) => p.dist_km > 20);
   const outerCount = outer.reduce((s, p) => s + p.n, 0);
 
+  // 숫자는 인원 상위 5개 버블만 — 나머지는 호버 툴팁이 담당한다 (260825 차트 감리)
+  const topRegions = new Set(drawOrder.slice(0, 5).map((p) => p.region));
+
   return (
     <div className="bubblemap">
       <div className="chart-legend">
@@ -91,9 +94,11 @@ export default function RegionBubbleMap({
               <g key={p.region}>
                 <title>{`${p.region} ${p.n}명 (${pct}%) · 회사에서 ${p.dist_km}km`}</title>
                 <circle cx={p.x} cy={p.y} r={r} className="bub" />
-                <text x={p.x} y={p.y + 5} className="bub-n">
-                  {p.n}
-                </text>
+                {topRegions.has(p.region) && (
+                  <text x={p.x} y={p.y + 5} className="bub-n">
+                    {p.n}
+                  </text>
+                )}
                 {/* 도심부는 원이 겹쳐 라벨이 서로를 가린다. 큰 것과 먼 곳만 이름을 달고
                     나머지는 아래 집계 표에서 정확한 값을 읽는다 */}
                 {(p.n >= 5 || p.dist_km > 20) && (
