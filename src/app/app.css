@@ -542,6 +542,66 @@ th.a-center .th-sort {
   color: var(--muted);
 }
 
+/* 인사카드 탭 (260825 지시서) — 밑줄 탭, 강조는 accent 하나로 */
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.tab {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 6px 12px;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 700;
+}
+
+/* 수집 예정 배지 — 스키마에 아직 없는 자리 표시 */
+.chip.pend {
+  font-size: 10px;
+  padding: 0 6px;
+  color: var(--faint);
+  background: var(--surface-2);
+  border-style: dashed;
+}
+
+.detail-row dd.ph {
+  color: var(--faint);
+}
+
+/* 마스킹 데모 — 실값 없음, 권한 설계 안내용 */
+.masked {
+  color: var(--muted);
+  letter-spacing: 1px;
+  cursor: help;
+}
+
+/* 빈 이력 테이블의 자리 행 */
+td.ph-cell {
+  text-align: center !important;
+  color: var(--faint);
+  font-size: 11px;
+  padding: 16px 12px;
+}
+
 /* 로그인 모달은 필드가 적어 좁게 */
 .modal.narrow {
   max-width: 420px;
