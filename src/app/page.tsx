@@ -236,6 +236,8 @@ export default function Home() {
 
       {view === "status" && (
       <>
+      {/* P3 — 타이틀과 KPI가 한 그룹(12px), 그룹 사이는 24px */}
+      <div className="vgroup">
       {/* P1 — 타이포 앵커: 페이지가 스스로 무엇인지 말한다 */}
       <div className="page-title">
         <h2>현황</h2>
@@ -279,11 +281,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </div>
       </>
       )}
 
       {view === "roster" && (
-      <>
+      <div className="vgroup">
       <div className="page-title">
         <h2>직원 대장</h2>
         <p>검색·필터로 찾고, 행을 클릭하면 인사카드가 열립니다</p>
@@ -493,11 +496,11 @@ export default function Home() {
         사람은 <b>퇴사예정</b>으로 구분해 현원에 포함합니다. 가상 회사
         &lsquo;가온컴퍼니&rsquo;의 더미데이터입니다.
       </div>
-      </>
+      </div>
       )}
 
       {view === "status" && (
-      <>
+      <div className="vgroup">
       <CollapsibleCard
         id="movement"
         title="인원 변동 — 최근 12개월"
@@ -563,7 +566,7 @@ export default function Home() {
 
       <TurnoverByDept rows={rows} />
       <ResidenceBreakdown rows={rows} />
-      </>
+      </div>
       )}
 
       {viewing && !editing && (

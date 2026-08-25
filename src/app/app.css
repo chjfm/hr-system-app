@@ -22,6 +22,13 @@
   padding: 20px 24px 48px;
   display: flex;
   flex-direction: column;
+  /* P3 — 여백 2단 리듬: 그룹 사이 24, 그룹 내부는 .vgroup(12) */
+  gap: 24px;
+}
+
+.vgroup {
+  display: flex;
+  flex-direction: column;
   gap: var(--card-gap);
 }
 
@@ -78,6 +85,11 @@ table td.a-check input {
 
 td .chip {
   vertical-align: middle;
+}
+
+/* P5 — 표 헤더행 미세 배경으로 표의 시작을 앵커링 */
+thead th {
+  background: var(--surface-2);
 }
 
 /* KPI 6칸 — 토큰 기본값은 4칸이다 */
@@ -493,7 +505,8 @@ th.a-center .th-sort {
 
 .detail-row dd {
   margin: 0;
-  font-size: 12px;
+  /* P5 — 데이터 값은 13px로 통일 (라벨만 11px) */
+  font-size: 13px;
   color: var(--ink-value);
   word-break: break-all;
 }
@@ -534,7 +547,7 @@ th.a-center .th-sort {
 }
 
 .tl-detail {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-cell);
 }
 
