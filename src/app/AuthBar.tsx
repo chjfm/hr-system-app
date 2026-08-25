@@ -45,7 +45,8 @@ export default function AuthBar({ session }: { session: Session | null }) {
   if (session) {
     return (
       <>
-        <span className="chip ok">{session.user.email}</span>
+        {/* 색 규율 — 화면의 색은 주황(강조)과 상태 점뿐. 로그인 표시는 무채색으로 충분하다 */}
+        <span className="chip">{session.user.email}</span>
         <button className="btn" onClick={() => supabase.auth.signOut()}>
           로그아웃
         </button>

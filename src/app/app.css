@@ -575,6 +575,12 @@ th.a-center .th-sort {
   font-weight: 700;
 }
 
+/* 상단 화면 탭 — 현황 / 직원 대장 (260825 개선 2) */
+.viewnav .tab {
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
 /* 수집 예정 배지 — 스키마에 아직 없는 자리 표시 */
 .chip.pend {
   font-size: 10px;

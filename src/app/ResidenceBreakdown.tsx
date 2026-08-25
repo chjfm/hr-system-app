@@ -46,7 +46,7 @@ export default function ResidenceBreakdown({ rows }: { rows: Employee[] }) {
     <CollapsibleCard
       id="residence"
       title="거주지역 분포"
-      defaultOpen={false}
+      defaultOpen
       meta={
         <>
           <select

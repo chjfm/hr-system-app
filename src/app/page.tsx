@@ -64,6 +64,9 @@ export default function Home() {
   const [editing, setEditing] = useState<Employee | null>(null);
   const [creating, setCreating] = useState(false);
 
+  // 화면 분리 — 홈이 현황 파악과 사람 찾기 두 가지 일을 하고 있었다 (260825 개선 2)
+  const [view, setView] = useState<"status" | "roster">("status");
+
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from("employees")
@@ -210,6 +213,29 @@ export default function Home() {
 
   return (
     <>
+      <nav className="tabs viewnav" role="tablist" aria-label="화면 선택">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "status"}
+          className={view === "status" ? "tab on" : "tab"}
+          onClick={() => setView("status")}
+        >
+          현황
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "roster"}
+          className={view === "roster" ? "tab on" : "tab"}
+          onClick={() => setView("roster")}
+        >
+          직원 대장
+        </button>
+      </nav>
+
+      {view === "status" && (
+      <>
       {/* R21 — 현원이 1순위다. 나머지는 "현원이 어떻게 구성되는가"(재직·휴직·퇴사예정)와
           참고 지표(퇴사 누적·평균 근속)로 한 단계 내렸다. */}
       <section className="statbar">
@@ -247,8 +273,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </>
+      )}
 
-      {/* 홈의 주인공은 직원 표 — KPI 다음에 바로 온다. 차트는 하단으로 (260825 방향서) */}
+      {view === "roster" && (
+      <>
+      {/* 직원 대장 화면 — 필터 행 + 부서 칩 + 표 (260825 방향서) */}
       <div className="card">
         <div className="card-head">
           <h3>직원 대장</h3>
@@ -345,7 +375,8 @@ export default function Home() {
             summary.byDept.map(([d, n]) => (
               <button
                 key={d}
-                className={`chip acc chip-btn${dept === d ? " on" : ""}`}
+                // 색 규율 — 칩 12개가 전부 주황이면 강조가 아니다. 선택된 것만 주황
+                className={`chip chip-btn${dept === d ? " on" : ""}`}
                 onClick={() => setDept(dept === d ? ALL : d)}
               >
                 {d} {n}
@@ -451,11 +482,16 @@ export default function Home() {
         사람은 <b>퇴사예정</b>으로 구분해 현원에 포함합니다. 가상 회사
         &lsquo;가온컴퍼니&rsquo;의 더미데이터입니다.
       </div>
+      </>
+      )}
 
+      {view === "status" && (
+      <>
       <CollapsibleCard
         id="movement"
         title="인원 변동 — 최근 12개월"
-        defaultOpen={false}
+        // 현황 탭 분리로 차트가 화면의 주인 — 접힌 채 비워두지 않는다 (사용자 저장값이 우선)
+        defaultOpen
         meta={
           <span className="unit">
             누적 입사 {year12.inn} · 퇴사 {year12.out} · 명
@@ -516,6 +552,8 @@ export default function Home() {
 
       <TurnoverByDept rows={rows} />
       <ResidenceBreakdown rows={rows} />
+      </>
+      )}
 
       {viewing && !editing && (
         <EmployeeDetail
