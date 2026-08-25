@@ -70,9 +70,17 @@ export default function CollapsibleCard({
           aria-expanded={shown}
           aria-controls={panelId}
         >
-          <span className="caret" aria-hidden="true">
-            ▸
-          </span>
+          {/* 문자 글리프(▸)는 잉크가 폰트 크기의 절반이라 SVG로 그린다 — 잉크 14px */}
+          <svg className="caret" viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              d="M5.5 1.5 L12.5 8 L5.5 14.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
           <h3>{title}</h3>
         </button>
         {meta && (

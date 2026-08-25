@@ -1003,17 +1003,22 @@ tbody tr.rowlink:focus-visible {
   border-radius: var(--radius-xs);
 }
 
-/* 셰브론은 문자 교체가 아니라 회전으로 전환 — 접힘 ▸ / 펼침 ▾ */
+/* 셰브론 — SVG 스트로크(잉크 14px), 문자 교체가 아니라 회전으로 전환 (접힘 ▸ / 펼침 ▾) */
 .sec-toggle .caret {
-  font-size: 12px;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
   color: var(--muted);
-  width: 14px;
-  display: inline-block;
   transition: transform 0.15s ease;
 }
 
 .sec-toggle[aria-expanded="true"] .caret {
   transform: rotate(90deg);
+}
+
+.head-toggle:hover .caret,
+.sec-toggle:hover .caret {
+  color: var(--ink);
 }
 
 /* 헤더 행 전체가 클릭 영역 — hover로 눌린다는 사실이 보인다 */

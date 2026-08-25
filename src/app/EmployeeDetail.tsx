@@ -127,9 +127,16 @@ function Section({
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
         >
-          <span className="caret" aria-hidden="true">
-            ▸
-          </span>
+          <svg className="caret" viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              d="M5.5 1.5 L12.5 8 L5.5 14.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
           <h3>
             {title}
             {count !== undefined && ` (${count ?? "…"})`}
