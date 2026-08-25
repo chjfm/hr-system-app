@@ -236,6 +236,12 @@ export default function Home() {
 
       {view === "status" && (
       <>
+      {/* P1 — 타이포 앵커: 페이지가 스스로 무엇인지 말한다 */}
+      <div className="page-title">
+        <h2>현황</h2>
+        <p>현원 구성과 최근 12개월 인원 변동 · 매일 아침 이 화면으로 시작합니다</p>
+      </div>
+
       {/* R21 — 현원이 1순위다. 나머지는 "현원이 어떻게 구성되는가"(재직·휴직·퇴사예정)와
           참고 지표(퇴사 누적·평균 근속)로 한 단계 내렸다. */}
       <section className="statbar">
@@ -278,6 +284,11 @@ export default function Home() {
 
       {view === "roster" && (
       <>
+      <div className="page-title">
+        <h2>직원 대장</h2>
+        <p>검색·필터로 찾고, 행을 클릭하면 인사카드가 열립니다</p>
+      </div>
+
       {/* 직원 대장 화면 — 필터 행 + 부서 칩 + 표 (260825 방향서) */}
       <div className="card">
         <div className="card-head">

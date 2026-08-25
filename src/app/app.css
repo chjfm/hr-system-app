@@ -581,6 +581,27 @@ th.a-center .th-sort {
   padding: 8px 16px;
 }
 
+/* P1 — 타이포 앵커. 크기는 토큰 규정 밖 자유도(제목 위계) */
+.page-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.page-title h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+
+.page-title p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* 수집 예정 배지 — 스키마에 아직 없는 자리 표시 */
 .chip.pend {
   font-size: 10px;
@@ -1116,22 +1137,33 @@ tbody tr.far td:first-child::after {
 /* ------------------------------------------------ R21 스탯 위계
    현원 하나가 이 화면의 답이다. 나머지는 그 구성과 참고 지표라
    크기·굵기로 한 단계 내린다. */
+/* P2 — KPI 개별 카드 6개, 동일 폭 그리드. 한 덩어리 분할 박스를 해체한다. */
 .statbar {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: repeat(6, 1fr);
   gap: var(--card-gap);
   align-items: stretch;
 }
 
-.stat-lead {
+/* 래퍼는 마크업에 남기되 그리드에서 해체 — 안의 카드들이 statbar 그리드에 직접 앉는다 */
+.stat-rest {
+  display: contents;
+}
+
+.stat-lead,
+.stat {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
   border-radius: var(--radius-card);
-  padding: 16px 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 3px;
+}
+
+.stat-lead {
+  border-left: 3px solid var(--accent);
   gap: 2px;
 }
 
@@ -1142,38 +1174,16 @@ tbody tr.far td:first-child::after {
 }
 
 .stat-lead .v {
-  font-size: 44px;
+  font-size: 32px;
   font-weight: 700;
   line-height: 1.05;
-  letter-spacing: -1.5px;
+  letter-spacing: -1px;
   color: var(--accent);
 }
 
 .stat-lead .s {
   font-size: 11px;
   color: var(--muted);
-}
-
-.stat-rest {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  overflow: hidden;
-}
-
-.stat {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
-  border-right: 1px solid var(--line);
-}
-
-.stat:last-child {
-  border-right: 0;
 }
 
 .stat .k {
@@ -1203,15 +1213,15 @@ tbody tr.far td:first-child::after {
   color: var(--ink-cell);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
   .statbar {
-    grid-template-columns: 1fr;
-  }
-  .stat-rest {
     grid-template-columns: repeat(3, 1fr);
   }
-  .stat:nth-child(3) {
-    border-right: 0;
+}
+
+@media (max-width: 640px) {
+  .statbar {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
