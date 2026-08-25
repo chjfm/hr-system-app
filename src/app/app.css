@@ -2,12 +2,19 @@
 
 .topbar {
   height: var(--topbar-h);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
+}
+
+/* P4 — 헤더 내용물을 본문과 같은 폭 그리드에 정렬 (배경은 전체 폭 유지) */
+.topbar-in {
+  max-width: 1200px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .topbar .brand {
