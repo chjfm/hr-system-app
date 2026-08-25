@@ -125,7 +125,7 @@ function Section({
           aria-expanded={open}
         >
           <span className="caret" aria-hidden="true">
-            {open ? "▾" : "▸"}
+            ▸
           </span>
           <h3>
             {title} ({count ?? "…"})

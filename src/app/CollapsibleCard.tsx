@@ -61,20 +61,25 @@ export default function CollapsibleCard({
 
   return (
     <section className="card">
-      <div className="card-head">
+      {/* 헤더 행 전체가 토글이다 — 버튼의 클릭은 여기로 버블되고,
+          meta 안의 select 등은 stopPropagation으로 토글을 건드리지 않는다 */}
+      <div className="card-head head-toggle" onClick={toggle}>
         <button
           type="button"
           className="sec-toggle"
-          onClick={toggle}
           aria-expanded={shown}
           aria-controls={panelId}
         >
           <span className="caret" aria-hidden="true">
-            {shown ? "▾" : "▸"}
+            ▸
           </span>
           <h3>{title}</h3>
         </button>
-        {meta}
+        {meta && (
+          <span className="head-meta" onClick={(e) => e.stopPropagation()}>
+            {meta}
+          </span>
+        )}
       </div>
 
       <div id={panelId} hidden={!shown} className="sec-body">

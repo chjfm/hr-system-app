@@ -990,10 +990,41 @@ tbody tr.rowlink:focus-visible {
   border-radius: var(--radius-xs);
 }
 
+/* 셰브론은 문자 교체가 아니라 회전으로 전환 — 접힘 ▸ / 펼침 ▾ */
 .sec-toggle .caret {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--muted);
-  width: 9px;
+  width: 14px;
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+.sec-toggle[aria-expanded="true"] .caret {
+  transform: rotate(90deg);
+}
+
+/* 헤더 행 전체가 클릭 영역 — hover로 눌린다는 사실이 보인다 */
+.card-head.head-toggle {
+  cursor: pointer;
+  margin: -8px;
+  padding: 8px;
+  border-radius: var(--radius-ctl);
+}
+
+.card-head.head-toggle:hover {
+  background: var(--surface-2);
+}
+
+.card-head.head-toggle:hover h3 {
+  color: var(--ink-acc);
+}
+
+.head-meta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
 }
 
 .sec-body {
