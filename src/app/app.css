@@ -99,6 +99,18 @@ thead th {
   background: var(--surface-2);
 }
 
+/* P7 — 표 밀도: 셀 13px 토큰은 정본 유지, 행 세로 패딩만 한 단계 축소.
+   헤더는 라벨 체계(11px)에 맞춘다. */
+table th,
+table td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+thead th {
+  font-size: 11px;
+}
+
 /* KPI 6칸 — 토큰 기본값은 4칸이다 */
 .kpis-6 {
   grid-template-columns: repeat(6, 1fr);
@@ -494,8 +506,9 @@ th.a-center .th-sort {
 
 .detail-row dd {
   margin: 0;
-  /* P5 — 데이터 값은 13px로 통일 (라벨만 11px) */
-  font-size: 13px;
+  /* P6 — 정의 리스트의 값은 12px. 13px+진한 색은 라벨 11px 대비 이중 강조라 과체중.
+     표 셀 13px 토큰과는 무관하다 (P5를 정정) */
+  font-size: 12px;
   color: var(--ink-value);
   word-break: break-all;
 }
@@ -946,11 +959,11 @@ tbody tr.rowlink:focus-visible {
 .chip.no   { color: var(--ink-no); }
 .chip.acc  { color: var(--ink-acc); }
 
-/* 선택된 부서 칩도 원색 면 + 진한 글자 */
+/* 선택된 부서 칩 — 주황 채움 위 흰 글자 (260825 사용자 확정, R22-3 계열 예외) */
 .chip-btn.on {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--on-accent-ink);
+  color: var(--on-accent);
   font-weight: 700;
 }
 

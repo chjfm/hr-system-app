@@ -55,7 +55,9 @@ const FIELD_LABEL: Record<string, string> = {
 /* ── 인사카드 탭 (항목사전 v0.1.0 구분 순서 — 260825 지시서) ──
    신규 항목은 DB 스키마 변경 없이 자리만 잡는다. 값이 생기는 시점은
    인터뷰로 항목 확정 후 — 그 전까지 '수집 예정' 배지가 자리를 표시한다. */
-const TABS = ["기본", "조직", "고용·계약", "급여", "이력", "법정"] as const;
+/* P8 — 탭 기준은 정보 도메인: 발령이력은 조직의 시간 축이라 조직 탭,
+   경력·자격 탭에는 사외 경력·학력·자격증·변경 기록. 성과는 평가 도메인 표기로 임시 배치 */
+const TABS = ["기본", "조직", "고용·계약", "급여", "경력·자격", "법정"] as const;
 type Tab = (typeof TABS)[number];
 
 /** 필드 자리의 상태 — 현행 값 / 수집 예정 자리 / 마스킹 데모 / 임의 노드(칩 등) */
@@ -109,7 +111,8 @@ function Section({
   children,
 }: {
   title: string;
-  count: number | null;
+  /** 생략하면 개수 표기 없이 제목만 — "성과 이력 (평가)"처럼 괄호가 이미 있는 제목용 */
+  count?: number | null;
   meta?: ReactNode;
   defaultOpen?: boolean;
   children: ReactNode;
@@ -128,7 +131,8 @@ function Section({
             ▸
           </span>
           <h3>
-            {title} ({count ?? "…"})
+            {title}
+            {count !== undefined && ` (${count ?? "…"})`}
           </h3>
         </button>
         {meta}
@@ -344,22 +348,11 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
 
         {tab === "기본" && <SlotList rows={basicRows} />}
 
-        {tab === "조직" && <SlotList rows={orgRows} />}
-
-        {tab === "고용·계약" && <SlotList rows={employRows} />}
-
-        {tab === "급여" && (
+        {tab === "조직" && (
           <>
-            <SlotList rows={payRows} />
-            <div className="callout">
-              급여 항목은 <b>정보 보관 자리만</b> 잡았습니다. 값 입력·계산 기능은 없으며,
-              편입 시기(1차 즉시 vs 급여마스터 이관 시)는 인사팀 인터뷰에서 확정합니다.
-            </div>
-          </>
-        )}
+            <SlotList rows={orgRows} />
 
-        {tab === "이력" && (
-          <>
+            {/* P8 — 발령이력은 조직 소속의 시간 축이다 */}
             <Section
               title="발령이력"
               count={history?.length ?? null}
@@ -383,47 +376,28 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
               )}
             </Section>
 
-            <Section
-              title="성과 이력"
-              count={perf?.length ?? null}
-              meta={<span className="unit">최신순</span>}
-            >
-            {perf === null ? (
-              <div className="t-empty">불러오는 중…</div>
-            ) : perf.length === 0 ? (
-              <div className="t-empty">기록된 수행 이력이 없습니다.</div>
-            ) : (
-              <div className="t-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>기간</th>
-                      <th>프로젝트 · 업무</th>
-                      <th>역할</th>
-                      <th>기여</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {perf.map((r) => (
-                      <tr key={r.id}>
-                        {/* 날짜가 표의 주인공이 아니다 — 보통 굵기로 위계를 내린다 (이슈 #2) */}
-                        <td className="nowrap date-cell">
-                          {r.started_on}
-                          <span className="sub-label">{r.ended_on ?? "진행 중"}</span>
-                        </td>
-                        <td className="wrap">{r.project}</td>
-                        <td>
-                          <span className="chip">{r.role}</span>
-                        </td>
-                        <td className="wrap">{r.contribution ?? "–"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            </Section>
+            <div className="callout">
+              입사·부서이동·승진·휴직·퇴사는 <b>저장하는 순간 이력이 자동으로 남습니다.</b>{" "}
+              수기로 기록할 필요가 없고, 직원 정보는 삭제되지 않습니다 — 퇴사도 상태
+              변경으로만 처리됩니다.
+            </div>
+          </>
+        )}
 
+        {tab === "고용·계약" && <SlotList rows={employRows} />}
+
+        {tab === "급여" && (
+          <>
+            <SlotList rows={payRows} />
+            <div className="callout">
+              급여 항목은 <b>정보 보관 자리만</b> 잡았습니다. 값 입력·계산 기능은 없으며,
+              편입 시기(1차 즉시 vs 급여마스터 이관 시)는 인사팀 인터뷰에서 확정합니다.
+            </div>
+          </>
+        )}
+
+        {tab === "경력·자격" && (
+          <>
             <PendingTable
               title="사외 경력"
               cols={["회사명", "재직기간", "직위", "담당업무"]}
@@ -470,6 +444,48 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
               </div>
             )}
             </Section>
+
+            {/* P8 — 성과는 평가 도메인. 평가 탭 신설은 인터뷰 후 결정이라 여기 임시 배치 */}
+            <Section title="성과 이력 (평가)" meta={<span className="unit">최신순</span>}>
+              {perf === null ? (
+                <div className="t-empty">불러오는 중…</div>
+              ) : perf.length === 0 ? (
+                <div className="t-empty">기록된 수행 이력이 없습니다.</div>
+              ) : (
+                <div className="t-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>기간</th>
+                        <th>프로젝트 · 업무</th>
+                        <th>역할</th>
+                        <th>기여</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {perf.map((r) => (
+                        <tr key={r.id}>
+                          {/* 날짜가 표의 주인공이 아니다 — 보통 굵기로 위계를 내린다 (이슈 #2) */}
+                          <td className="nowrap date-cell">
+                            {r.started_on}
+                            <span className="sub-label">{r.ended_on ?? "진행 중"}</span>
+                          </td>
+                          <td className="wrap">{r.project}</td>
+                          <td>
+                            <span className="chip">{r.role}</span>
+                          </td>
+                          <td className="wrap">{r.contribution ?? "–"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className="callout">
+                <b>평가 영역</b> — 평가 제도 확정 전 보류 상태입니다. 인사원장 편입 여부는
+                인사팀 인터뷰에서 확정합니다.
+              </div>
+            </Section>
           </>
         )}
 
@@ -481,14 +497,6 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
               제외 — 인사팀 인터뷰에서 판정합니다.
             </div>
           </>
-        )}
-
-        {tab === "이력" && (
-          <div className="callout">
-            입사·부서이동·승진·휴직·퇴사는 <b>저장하는 순간 이력이 자동으로 남습니다.</b>{" "}
-            수기로 기록할 필요가 없고, 직원 정보는 삭제되지 않습니다 — 퇴사도 상태 변경으로만
-            처리됩니다.
-          </div>
         )}
 
         <div className="toolbar">
