@@ -14,6 +14,8 @@ export const supabase = createClient(url, key);
 /** DB에 저장되는 재직구분 */
 export const STATUSES = ["재직", "휴직", "퇴사"] as const;
 export const HIRE_TYPES = ["신입", "경력"] as const;
+/** 고용형태 5종 — 급여마스터 C열·항목사전 §4 확정안. 채용구분(hire_type)과 다른 축 */
+export const EMPLOYMENT_TYPES = ["정규직", "별정직", "계약직", "인턴", "회장"] as const;
 
 export type Status = (typeof STATUSES)[number];
 
@@ -52,6 +54,7 @@ export type Employee = {
   email: string | null;
   phone: string | null;
   hire_type: string | null;
+  employment_type: string;
   effective_date: string | null;
   /** R18 — 시·구 단위만. 상세 주소는 저장하지 않는다 (R9) */
   residence: string | null;

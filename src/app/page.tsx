@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DISPLAY_STATUSES,
+  EMPLOYMENT_TYPES,
   displayStatus,
   distinct,
   formatTenure,
@@ -16,6 +17,7 @@ import {
   type EmployeeInput,
 } from "@/lib/supabase";
 import { downloadCsv } from "@/lib/csv";
+import { accruedLeave, usedLeave, type Leave } from "@/lib/leave";
 import { COLUMNS, sortRows, type SortKey, type SortState } from "@/lib/sort";
 import { monthlyMovement, quarterly } from "@/lib/movement";
 import { useSession } from "./AuthBar";
@@ -43,6 +45,7 @@ export default function Home() {
 
   const [rows, setRows] = useState<Employee[]>([]);
   const [depts, setDepts] = useState<Department[]>([]);
+  const [allLeaves, setAllLeaves] = useState<Leave[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -52,6 +55,7 @@ export default function Home() {
   const [dept, setDept] = useState(ALL);
   const [status, setStatus] = useState(ALL);
   const [position, setPosition] = useState(ALL);
+  const [etype, setEtype] = useState(ALL);
 
   // R11 — 전 컬럼 정렬
   const [sort, setSort] = useState<SortState>({ key: "employee_no", dir: "asc" });
@@ -89,6 +93,11 @@ export default function Home() {
       .select("*")
       .order("sort_order", { ascending: true })
       .then(({ data }) => setDepts((data as Department[]) ?? []));
+    // 연차 사용 기록 (260826 4단계) — 현황 요약 집계용
+    supabase
+      .from("leaves")
+      .select("*")
+      .then(({ data }) => setAllLeaves((data as Leave[]) ?? []));
   }, [load]);
 
   const companies = useMemo(() => distinct(rows, "company"), [rows]);
@@ -107,6 +116,7 @@ export default function Home() {
       if (dept !== ALL && r.department !== dept) return false;
       if (status !== ALL && displayStatus(r) !== status) return false;
       if (position !== ALL && r.position !== position) return false;
+      if (etype !== ALL && r.employment_type !== etype) return false;
       if (!needle) return true;
       return [r.name_ko, r.name_en ?? "", r.employee_no, r.department, r.position]
         .join(" ")
@@ -114,7 +124,7 @@ export default function Home() {
         .includes(needle);
     });
     return sortRows(matched, sort);
-  }, [rows, q, company, dept, status, position, sort]);
+  }, [rows, q, company, dept, status, position, etype, sort]);
 
   // R7 — 대시보드 자동 집계
   const summary = useMemo(() => {
@@ -125,9 +135,13 @@ export default function Home() {
       퇴사: 0,
     };
     const byDept = new Map<string, number>();
+    const byEtype = new Map<string, number>();
     for (const r of rows) {
       byStatus[displayStatus(r)] += 1;
-      if (isOnBoard(r)) byDept.set(r.department, (byDept.get(r.department) ?? 0) + 1);
+      if (isOnBoard(r)) {
+        byDept.set(r.department, (byDept.get(r.department) ?? 0) + 1);
+        byEtype.set(r.employment_type, (byEtype.get(r.employment_type) ?? 0) + 1);
+      }
     }
     const onBoard = byStatus.재직 + byStatus.휴직 + byStatus.퇴사예정;
     const onBoardRows = rows.filter((r) => isOnBoard(r));
@@ -140,8 +154,19 @@ export default function Home() {
       onBoard,
       avgTenure,
       byDept: [...byDept.entries()].sort((a, b) => b[1] - a[1]),
+      // 고용형태는 5종 고정 순서 — 많은 순으로 섞으면 매번 자리가 바뀐다
+      byEtype: EMPLOYMENT_TYPES.map((t) => [t, byEtype.get(t) ?? 0] as const),
     };
   }, [rows]);
+
+  // 연차 요약 (260826 4단계) — 현원 발생 합 대비 사용 합
+  const leaveSummary = useMemo(() => {
+    const onBoard = rows.filter((r) => isOnBoard(r));
+    const onSet = new Set(onBoard.map((r) => r.employee_no));
+    const accrued = onBoard.reduce((s, r) => s + accruedLeave(r), 0);
+    const used = usedLeave((allLeaves ?? []).filter((l) => onSet.has(l.employee_no)));
+    return { accrued, used, rate: accrued ? (used / accrued) * 100 : 0 };
+  }, [rows, allLeaves]);
 
   // R12 — 12개월 추이 + 분기 병기
   const months = useMemo(() => monthlyMovement(rows), [rows]);
@@ -209,7 +234,7 @@ export default function Home() {
     );
   }
 
-  const filterOn = q || [company, dept, status, position].some((v) => v !== ALL);
+  const filterOn = q || [company, dept, status, position, etype].some((v) => v !== ALL);
 
   return (
     <>
@@ -281,6 +306,49 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* 고용형태 구성 (260826 1단계) — 급여·4대보험·계약 관리가 이 구분으로 갈린다 */}
+      <div className="row2 even">
+        <div className="card">
+          <div className="card-head">
+            <h3>고용형태 구성</h3>
+            <span className="unit">현원 기준 · 명</span>
+          </div>
+          <div className="etype-row">
+            {summary.byEtype.map(([t, n]) => (
+              <div key={t} className={n === 0 ? "etype dim" : "etype"}>
+                <span className="k">{t}</span>
+                <span className="v">{n}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 연차 사용 현황 (260826 4단계) — 산정 기준은 인터뷰에서 확정될 가정값 */}
+        <div className="card">
+          <div className="card-head">
+            <h3>연차 사용 현황</h3>
+            <span className="unit">현원 · 산정 기준은 인사팀 확인 예정</span>
+          </div>
+          <div className="etype-row leave-row">
+            <div className="etype">
+              <span className="k">발생</span>
+              <span className="v">{leaveSummary.accrued.toLocaleString()}</span>
+              <span className="k">일</span>
+            </div>
+            <div className="etype">
+              <span className="k">사용</span>
+              <span className="v">{leaveSummary.used.toLocaleString()}</span>
+              <span className="k">일</span>
+            </div>
+            <div className="etype">
+              <span className="k">소진율</span>
+              <span className="v">{leaveSummary.rate.toFixed(0)}</span>
+              <span className="k">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
       </>
       )}
@@ -343,6 +411,14 @@ export default function Home() {
               </option>
             ))}
           </select>
+          <select className="input" value={etype} onChange={(e) => setEtype(e.target.value)}>
+            <option value={ALL}>고용형태 · 전체</option>
+            {EMPLOYMENT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
           {filterOn && (
             <button
               className="btn"
@@ -352,6 +428,7 @@ export default function Home() {
                 setDept(ALL);
                 setStatus(ALL);
                 setPosition(ALL);
+                setEtype(ALL);
               }}
             >
               초기화
@@ -476,6 +553,7 @@ export default function Home() {
                       <td>{r.company}</td>
                       <td>{r.department}</td>
                       <td>{r.position}</td>
+                      <td>{r.employment_type}</td>
                       <td className="a-right">{r.hire_date}</td>
                       <td className="a-right">{formatTenure(tenureYears(r))}</td>
                       <td className="a-right">{r.resign_date ?? "–"}</td>

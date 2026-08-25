@@ -24,6 +24,7 @@ export type SortKey =
   | "company"
   | "department"
   | "position"
+  | "employment_type"
   | "hire_date"
   | "tenure"
   | "resign_date"
@@ -45,6 +46,7 @@ export const COLUMNS: Col[] = [
   { key: "company", label: "소속", value: (e) => e.company },
   { key: "department", label: "부서명", value: (e) => e.department },
   { key: "position", label: "직급", value: (e) => POSITION_RANK[e.position] ?? 0 },
+  { key: "employment_type", label: "고용형태", value: (e) => e.employment_type },
   { key: "hire_date", label: "입사일", value: (e) => e.hire_date, align: "right" },
   { key: "tenure", label: "근속", value: (e) => tenureYears(e), align: "right" },
   // 퇴사일 없는 사람은 항상 끝으로 — 빈 값이 앞에 몰리면 목록이 안 읽힌다

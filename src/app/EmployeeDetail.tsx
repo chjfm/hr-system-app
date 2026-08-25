@@ -11,6 +11,8 @@ import {
   type Employee,
   type Performance,
 } from "@/lib/supabase";
+import { FIELD_LABEL } from "@/lib/fields";
+import { accruedLeave, usedLeave, type Leave } from "@/lib/leave";
 
 const KIND_CHIP: Record<Appointment["kind"], string> = {
   입사: "chip acc",
@@ -37,20 +39,6 @@ type ChangeRow = {
   changed_at: string;
 };
 
-const FIELD_LABEL: Record<string, string> = {
-  name_ko: "한글성명",
-  name_en: "영문성명",
-  company: "소속",
-  department: "부서명",
-  position: "직급",
-  status: "재직구분",
-  birth_date: "생년월일",
-  hire_date: "입사일",
-  resign_date: "퇴사일",
-  email: "메일계정",
-  phone: "휴대전화",
-  hire_type: "채용구분",
-};
 
 /* ── 인사카드 탭 (항목사전 v0.1.0 구분 순서 — 260825 지시서) ──
    신규 항목은 DB 스키마 변경 없이 자리만 잡는다. 값이 생기는 시점은
@@ -192,6 +180,7 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
   const [history, setHistory] = useState<Appointment[] | null>(null);
   const [changes, setChanges] = useState<ChangeRow[] | null>(null);
   const [perf, setPerf] = useState<Performance[] | null>(null);
+  const [leaves, setLeaves] = useState<Leave[] | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -220,6 +209,15 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
       .order("started_on", { ascending: false })
       .then(({ data }) => {
         if (alive) setPerf((data as Performance[]) ?? []);
+      });
+    // 연차 사용 기록 (260826 4단계) — 발생은 산식 계산, 여기는 사용·조정 사건만
+    supabase
+      .from("leaves")
+      .select("*")
+      .eq("employee_no", employee.employee_no)
+      .order("used_on", { ascending: false })
+      .then(({ data }) => {
+        if (alive) setLeaves((data as Leave[]) ?? []);
       });
     return () => {
       alive = false;
@@ -270,7 +268,7 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
   /* 고용·계약 — 재직구분·근속은 현행 파생 로직 유지 (R10) */
   const employRows: [string, Slot][] = [
     ["재직구분", { t: "node", v: <span className={STATUS_CHIP[ds]}>{ds}</span> }],
-    ["고용형태", PENDING],
+    ["고용형태", val(employee.employment_type)],
     ["입사일", val(employee.hire_date)],
     ["근속", val(tenure + (ds === "퇴사" ? " (퇴사 시점)" : ""))],
     ["퇴사일", val(employee.resign_date)],
@@ -391,7 +389,51 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
           </>
         )}
 
-        {tab === "고용·계약" && <SlotList rows={employRows} />}
+        {tab === "고용·계약" && (
+          <>
+            <SlotList rows={employRows} />
+
+            {/* 연차 (260826 4단계) — 발생은 근로기준법 기본 산식, 사용은 leaves 기록 */}
+            <div className="card-head" style={{ marginTop: 4 }}>
+              <h3>연차</h3>
+              <span className="unit">발생 = 산식 · 사용 = 기록</span>
+            </div>
+            {leaves === null ? (
+              <div className="t-empty">불러오는 중…</div>
+            ) : (
+              (() => {
+                const accrued = accruedLeave(employee);
+                const used = usedLeave(leaves);
+                return (
+                  <div className="etype-row leave-row">
+                    <div className="etype">
+                      <span className="k">발생</span>
+                      <span className="v">{accrued}</span>
+                      <span className="k">일</span>
+                    </div>
+                    <div className="etype">
+                      <span className="k">사용</span>
+                      <span className="v">{used % 1 ? used.toFixed(1) : used}</span>
+                      <span className="k">일</span>
+                    </div>
+                    <div className="etype">
+                      <span className="k">잔여</span>
+                      <span className="v">
+                        {(accrued - used) % 1 ? (accrued - used).toFixed(1) : accrued - used}
+                      </span>
+                      <span className="k">일</span>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+            <div className="callout">
+              발생 연차는 <b>근로기준법 기본 산식(입사일 기준 15일+가산, 1년 미만 월
+              1일)의 가정</b>으로 계산했습니다. 회계연도 기준·이월 등{" "}
+              <b>산정 기준은 인사팀 확인 예정</b>입니다.
+            </div>
+          </>
+        )}
 
         {tab === "급여" && (
           <>

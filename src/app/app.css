@@ -21,6 +21,34 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--ink);
+  text-decoration: none;
+}
+
+/* 상단 네비 — 페이지 라우트 이동 (260826 3단계) */
+.topnav {
+  display: flex;
+  gap: 2px;
+  margin-left: 12px;
+}
+
+.topnav-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: var(--radius-ctl);
+}
+
+.topnav-link:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.topnav-link.on {
+  color: var(--ink-acc);
+  font-weight: 700;
+  background: var(--accent-soft);
 }
 
 .page {
@@ -594,6 +622,50 @@ th.a-center .th-sort {
 .viewnav .tab {
   font-size: 13px;
   padding: 8px 16px;
+}
+
+/* 고용형태 구성 — 가로 스탯 행 (260826 1단계) */
+.etype-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--card-gap);
+}
+
+.etype {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-ctl);
+  background: var(--surface-2);
+}
+
+.etype .k {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.etype .v {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-value);
+}
+
+.etype.dim .v {
+  color: var(--faint);
+  font-weight: 500;
+}
+
+@media (max-width: 780px) {
+  .etype-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 연차 3칸 — 발생·사용·잔여 */
+.etype-row.leave-row {
+  grid-template-columns: repeat(3, 1fr);
 }
 
 /* P1 — 타이포 앵커. 크기는 토큰 규정 밖 자유도(제목 위계) */

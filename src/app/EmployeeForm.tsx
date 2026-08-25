@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  EMPLOYMENT_TYPES,
   HIRE_TYPES,
   STATUSES,
   today,
@@ -53,6 +54,7 @@ export default function EmployeeForm({
         email: null,
         phone: null,
         hire_type: "신입",
+        employment_type: "정규직",
         residence: null,
         effective_date: null,
       });
@@ -249,6 +251,22 @@ export default function EmployeeForm({
               onChange={(e) => set({ hire_type: e.target.value })}
             >
               {HIRE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field">
+            <label htmlFor="f-etype">고용형태</label>
+            <select
+              id="f-etype"
+              className="input"
+              value={form.employment_type}
+              onChange={(e) => set({ employment_type: e.target.value })}
+            >
+              {EMPLOYMENT_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {t}
                 </option>
