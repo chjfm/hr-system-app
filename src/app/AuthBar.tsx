@@ -66,12 +66,12 @@ export default function AuthBar({ session }: { session: Session | null }) {
           <form className="card modal narrow" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
             <div className="card-head">
               <h3>로그인</h3>
-              <span className="unit">직원 정보 변경에만 필요합니다</span>
+              <span className="unit">발급 계정 전용</span>
             </div>
 
             <div className="callout">
-              <b>조회는 로그인 없이 가능합니다.</b> 등록·수정은 누가 언제 바꿨는지 기록으로
-              남아야 하므로 로그인이 필요합니다. 변경 기록에 아래 이메일이 남습니다.
+              <b>인사정보는 발급된 계정으로만 관리할 수 있습니다.</b> 등록·수정 내역은
+              계정 이메일로 기록됩니다.
             </div>
 
             <div className="field">
