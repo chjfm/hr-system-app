@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   displayStatus,
   formatTenure,
@@ -58,11 +58,12 @@ const FIELD_LABEL: Record<string, string> = {
 const TABS = ["기본", "조직", "고용·계약", "급여", "이력", "법정"] as const;
 type Tab = (typeof TABS)[number];
 
-/** 필드 자리의 세 가지 상태 — 현행 값 / 수집 예정 자리 / 마스킹 데모 */
+/** 필드 자리의 상태 — 현행 값 / 수집 예정 자리 / 마스킹 데모 / 임의 노드(칩 등) */
 type Slot =
   | { t: "value"; v: string }
   | { t: "pending" }
-  | { t: "masked"; v: string };
+  | { t: "masked"; v: string }
+  | { t: "node"; v: ReactNode };
 
 const val = (v: string | null | undefined): Slot => ({ t: "value", v: v || "–" });
 const PENDING: Slot = { t: "pending" };
@@ -99,15 +100,53 @@ function SlotList({ rows }: { rows: [string, Slot][] }) {
   );
 }
 
-/** 이력 탭의 빈 테이블 자리 — 헤더로 들어갈 컬럼을 미리 보여준다 */
-function PendingTable({ title, cols }: { title: string; cols: string[] }) {
+/** 이력 탭 섹션 — plain-1 문법: `제목 (개수)` + 접기. 저장 없이 패널이 열릴 때마다 초기값 */
+function Section({
+  title,
+  count,
+  meta,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  count: number | null;
+  meta?: ReactNode;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <>
       <div className="card-head" style={{ marginTop: 4 }}>
-        <h3>{title}</h3>
-        <span className="chip pend">수집 예정</span>
-        <span className="unit">항목 확정 후 입력</span>
+        <button
+          type="button"
+          className="sec-toggle"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+        >
+          <span className="caret" aria-hidden="true">
+            {open ? "▾" : "▸"}
+          </span>
+          <h3>
+            {title} ({count ?? "…"})
+          </h3>
+        </button>
+        {meta}
       </div>
+      {open && children}
+    </>
+  );
+}
+
+/** 이력 탭의 빈 테이블 자리 — 헤더로 들어갈 컬럼을 미리 보여준다 */
+function PendingTable({ title, cols }: { title: string; cols: string[] }) {
+  return (
+    <Section
+      title={title}
+      count={0}
+      defaultOpen={false}
+      meta={<span className="chip pend">수집 예정</span>}
+    >
       <div className="t-scroll">
         <table>
           <thead>
@@ -126,7 +165,7 @@ function PendingTable({ title, cols }: { title: string; cols: string[] }) {
           </tbody>
         </table>
       </div>
-    </>
+    </Section>
   );
 }
 
@@ -176,6 +215,15 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
     };
   }, [employee.employee_no]);
 
+  // 패널 닫기 3종 — Esc·바깥 클릭·X (260825 방향서)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const ds = displayStatus(employee);
   const tenure = formatTenure(tenureYears(employee));
 
@@ -210,15 +258,17 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
 
   /* 고용·계약 — 재직구분·근속은 현행 파생 로직 유지 (R10) */
   const employRows: [string, Slot][] = [
+    ["재직구분", { t: "node", v: <span className={STATUS_CHIP[ds]}>{ds}</span> }],
     ["고용형태", PENDING],
     ["입사일", val(employee.hire_date)],
     ["근속", val(tenure + (ds === "퇴사" ? " (퇴사 시점)" : ""))],
     ["퇴사일", val(employee.resign_date)],
     ["퇴사사유", PENDING],
     ["채용구분", val(employee.hire_type)],
-    ["경력기간(입사 전)", PENDING],
+    // 긴 라벨은 축약한다 — 정식 명칭은 항목사전이 정본 (260825 방향서 변경 3)
+    ["입사 전 경력", PENDING],
     ["계약기간(계약직)", PENDING],
-    ["프로젝트명(계약직)", PENDING],
+    ["프로젝트명", PENDING],
   ];
 
   /* 급여 — 1차 = 정보 보관까지. 계좌는 주민번호와 동일 보안 등급 (S1) */
@@ -250,14 +300,22 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
   ];
 
   return (
-    <div className="backdrop" onClick={onClose}>
-      <div className="card modal" onClick={(e) => e.stopPropagation()}>
-        <div className="card-head">
+    <div className="drawer-root" onClick={onClose}>
+      <aside
+        className="panel"
+        role="dialog"
+        aria-label={`${employee.name_ko} 인사카드`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="card-head panel-head">
           <h3>{employee.name_ko}</h3>
           <span className={STATUS_CHIP[ds]}>{ds}</span>
-          <span className="unit">
-            {employee.company} · {employee.department} · {employee.position} · 근속 {tenure}
-          </span>
+          <button type="button" className="icon-btn" aria-label="닫기" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className="hint">
+          {employee.company} · {employee.department} · {employee.position} · 근속 {tenure}
         </div>
 
         {ds === "퇴사예정" && (
@@ -286,19 +344,7 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
 
         {tab === "조직" && <SlotList rows={orgRows} />}
 
-        {tab === "고용·계약" && (
-          <>
-            <SlotList rows={employRows} />
-            <dl className="detail">
-              <div className="detail-row">
-                <dt>재직구분</dt>
-                <dd>
-                  <span className={STATUS_CHIP[ds]}>{ds}</span>
-                </dd>
-              </div>
-            </dl>
-          </>
-        )}
+        {tab === "고용·계약" && <SlotList rows={employRows} />}
 
         {tab === "급여" && (
           <>
@@ -312,37 +358,34 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
 
         {tab === "이력" && (
           <>
-            <div className="card-head" style={{ marginTop: 4 }}>
-              <h3>발령이력</h3>
-              <span className="unit">
-                {history === null ? "불러오는 중…" : `${history.length}건 · 최신순`}
-              </span>
-            </div>
+            <Section
+              title="발령이력"
+              count={history?.length ?? null}
+              meta={<span className="unit">최신순</span>}
+            >
+              {history === null ? (
+                <div className="t-empty">불러오는 중…</div>
+              ) : history.length === 0 ? (
+                <div className="t-empty">기록된 발령이 없습니다.</div>
+              ) : (
+                <ol className="timeline">
+                  {history.map((h) => (
+                    <li key={h.id}>
+                      <span className="tl-date">{h.appointed_on}</span>
+                      <span className={KIND_CHIP[h.kind]}>{h.kind}</span>
+                      <span className="tl-detail">{h.detail}</span>
+                      {h.actor_email && <span className="tl-actor">입력 {h.actor_email}</span>}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </Section>
 
-            {history === null ? (
-              <div className="t-empty">불러오는 중…</div>
-            ) : history.length === 0 ? (
-              <div className="t-empty">기록된 발령이 없습니다.</div>
-            ) : (
-              <ol className="timeline">
-                {history.map((h) => (
-                  <li key={h.id}>
-                    <span className="tl-date">{h.appointed_on}</span>
-                    <span className={KIND_CHIP[h.kind]}>{h.kind}</span>
-                    <span className="tl-detail">{h.detail}</span>
-                    {h.actor_email && <span className="tl-actor">입력 {h.actor_email}</span>}
-                  </li>
-                ))}
-              </ol>
-            )}
-
-            <div className="card-head" style={{ marginTop: 4 }}>
-              <h3>성과 이력</h3>
-              <span className="unit">
-                {perf === null ? "불러오는 중…" : `${perf.length}건 · 최신순`}
-              </span>
-            </div>
-
+            <Section
+              title="성과 이력"
+              count={perf?.length ?? null}
+              meta={<span className="unit">최신순</span>}
+            >
             {perf === null ? (
               <div className="t-empty">불러오는 중…</div>
             ) : perf.length === 0 ? (
@@ -376,6 +419,7 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
                 </table>
               </div>
             )}
+            </Section>
 
             <PendingTable
               title="사외 경력"
@@ -387,13 +431,11 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
             />
             <PendingTable title="자격증" cols={["자격명", "취득일", "발급기관"]} />
 
-            <div className="card-head" style={{ marginTop: 4 }}>
-              <h3>변경 기록</h3>
-              <span className="unit">
-                {changes === null ? "불러오는 중…" : `${changes.length}건 · 최신 20건`}
-              </span>
-            </div>
-
+            <Section
+              title="변경 기록"
+              count={changes?.length ?? null}
+              meta={<span className="unit">최신 20건</span>}
+            >
             {changes === null ? (
               <div className="t-empty">불러오는 중…</div>
             ) : changes.length === 0 ? (
@@ -424,6 +466,7 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
                 </table>
               </div>
             )}
+            </Section>
           </>
         )}
 
@@ -457,7 +500,7 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
             정보 수정
           </button>
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

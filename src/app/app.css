@@ -37,11 +37,12 @@
   margin-left: auto;
 }
 
-/* 부서별 인원 — 카드 안 보조 목록 */
+/* 부서별 현원 칩 — 직원 대장 카드 안, 표의 필터 역할 */
 .deptlist {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
 }
 
 /* 직원 대장 — 토큰의 표 스타일은 숫자 표 기준(우측 정렬)이다.
@@ -370,8 +371,8 @@ th.a-center .th-sort {
 .card.sub {
   border-color: var(--accent);
   background: var(--accent-soft);
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 16px;
 }
 
 .eff-row {
@@ -478,9 +479,9 @@ th.a-center .th-sort {
 
 .detail-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: baseline;
-  padding: 5px 0;
+  padding: 4px 0;
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -505,7 +506,7 @@ th.a-center .th-sort {
   border-left: 2px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 8px;
 }
 
 .timeline li {
@@ -559,7 +560,7 @@ th.a-center .th-sort {
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
-  padding: 6px 12px;
+  padding: 8px 12px;
   margin-bottom: -1px;
   cursor: pointer;
 }
@@ -600,6 +601,123 @@ td.ph-cell {
   color: var(--faint);
   font-size: 11px;
   padding: 16px 12px;
+}
+
+/* ------------------------------------------------ 우측 슬라이드 패널 (260825 방향서)
+   목록을 흐리게 덮지 않는다 — 투명한 전면 레이어가 바깥 클릭만 받는다. */
+.drawer-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 94vw;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  padding: var(--card-pad);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: panel-in 0.18s ease;
+}
+
+@keyframes panel-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.panel-head h3 {
+  font-size: 14px;
+}
+
+.panel-head .icon-btn {
+  margin-left: auto;
+}
+
+.icon-btn {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+}
+
+.icon-btn:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 패널 폭에서는 라벨-값 1열 — 라벨 고정폭 회색 (plain-1 문법) */
+.panel .detail {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.panel .detail-row dt {
+  flex: 0 0 96px;
+}
+
+/* ------------------------------------------------ 표 재직구분 — 점+텍스트
+   158행에 색 배지를 깔면 표가 시끄럽다. 상태는 점 하나와 글자로 충분하다. */
+.st {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-cell);
+  white-space: nowrap;
+}
+
+.st::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.st.ok::before {
+  background: var(--good);
+}
+
+.st.plan::before {
+  background: var(--warn);
+}
+
+/* 퇴사예정 — 휴직과 같은 경고 계열이되 빈 점으로 구분 (아직 재직 중) */
+.st.warn::before {
+  background: var(--surface);
+  border: 2px solid var(--warn);
+  width: 5px;
+  height: 5px;
+}
+
+.st.no::before {
+  background: var(--bad);
 }
 
 /* 로그인 모달은 필드가 적어 좁게 */
@@ -991,7 +1109,7 @@ tbody tr.far td:first-child::after {
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius-card);
-  padding: 18px 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1027,7 +1145,7 @@ tbody tr.far td:first-child::after {
 }
 
 .stat {
-  padding: 14px 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1076,12 +1194,6 @@ tbody tr.far td:first-child::after {
   .stat:nth-child(3) {
     border-right: 0;
   }
-}
-
-/* R24 — 부서 칩에서 대장으로 이동할 때의 착지점.
-   툴바 바로 위에 두어 검색·필터가 함께 보이게 한다. */
-.roster-anchor {
-  scroll-margin-top: 12px;
 }
 
 /* R25 — 증감 칩. 색만으로 방향을 알리지 않는다: 부호와 숫자를 항상 함께 쓴다. */

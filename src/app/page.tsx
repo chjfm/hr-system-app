@@ -27,11 +27,12 @@ import BulkTransfer from "./BulkTransfer";
 import EmployeeDetail from "./EmployeeDetail";
 import EmployeeForm from "./EmployeeForm";
 
-const STATUS_CHIP: Record<DisplayStatus, string> = {
-  재직: "chip ok",
-  휴직: "chip plan",
-  퇴사예정: "chip warn",
-  퇴사: "chip no",
+/* 표 안에서는 배지 대신 점+텍스트 — 158행에 색 배지를 깔면 표가 시끄럽다 */
+const STATUS_DOT: Record<DisplayStatus, string> = {
+  재직: "st ok",
+  휴직: "st plan",
+  퇴사예정: "st warn",
+  퇴사: "st no",
 };
 
 const ALL = "전체";
@@ -199,14 +200,6 @@ export default function Home() {
     });
   }
 
-  /** 부서 칩으로 필터를 걸면 결과가 있는 곳까지 데려간다 */
-  function scrollToRoster() {
-    const el = document.getElementById("roster");
-    if (!el) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-  }
-
   function toggleSort(key: SortKey) {
     setSort((s) =>
       s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
@@ -255,178 +248,7 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="card">
-        <div className="card-head">
-          <h3>부서별 인원</h3>
-          <span className="unit">현원 기준 · 눌러서 필터 · 명</span>
-        </div>
-        <div className="deptlist">
-          {summary.byDept.length === 0 && !loading ? (
-            <span className="chip">데이터 없음</span>
-          ) : (
-            summary.byDept.map(([d, n]) => (
-              <button
-                key={d}
-                className={`chip acc chip-btn${dept === d ? " on" : ""}`}
-                onClick={() => {
-                  const next = dept === d ? ALL : d;
-                  setDept(next);
-                  // 칩이 대장에서 멀어져 필터가 걸린 걸 못 볼 수 있다 — 결과로 데려간다
-                  if (next !== ALL) scrollToRoster();
-                }}
-              >
-                {d} {n}
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-
-      <CollapsibleCard
-        id="movement"
-        title="인원 변동 — 최근 12개월"
-        defaultOpen={false}
-        meta={
-          <span className="unit">
-            누적 입사 {year12.inn} · 퇴사 {year12.out} · 명
-            {/* 증감만 칩으로 승격 — 색과 함께 부호·숫자를 항상 병기한다 (R16) */}
-            <span
-              className={`chip delta ${year12.net > 0 ? "up" : year12.net < 0 ? "down" : ""}`}
-            >
-              증감 {year12.net > 0 ? "+" : ""}
-              {year12.net}
-            </span>
-          </span>
-        }
-      >
-        <MovementChart data={months} />
-
-        <div className="t-scroll">
-          <table className="mini quarters">
-            <thead>
-              <tr>
-                <th>분기</th>
-                {quarters.map((qt) => (
-                  <th key={qt.label}>
-                    {qt.label}
-                    {qt.partial && <span className="sub-label">일부 기간</span>}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>입사</td>
-                {quarters.map((qt) => (
-                  <td key={qt.label}>{qt.inn}</td>
-                ))}
-              </tr>
-              <tr>
-                <td>퇴사</td>
-                {quarters.map((qt) => (
-                  <td key={qt.label}>{qt.out}</td>
-                ))}
-              </tr>
-              <tr>
-                <td>증감</td>
-                {quarters.map((qt) => (
-                  <td
-                    key={qt.label}
-                    className={qt.net > 0 ? "pos" : qt.net < 0 ? "neg" : undefined}
-                  >
-                    {qt.net > 0 ? "+" : ""}
-                    {qt.net}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </CollapsibleCard>
-
-      <TurnoverByDept rows={rows} />
-      <ResidenceBreakdown rows={rows} />
-
-      <div id="roster" className="roster-anchor" />
-
-      <div className="toolbar">
-        <input
-          className="input"
-          style={{ minWidth: 180 }}
-          placeholder="이름·사번 검색"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <select className="input" value={company} onChange={(e) => setCompany(e.target.value)}>
-          <option value={ALL}>소속 · 전체</option>
-          {companies.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <select className="input" value={dept} onChange={(e) => setDept(e.target.value)}>
-          <option value={ALL}>부서 · 전체</option>
-          {depts.map((d) => (
-            <option key={d.code} value={d.name}>
-              {d.name}
-              {d.active ? "" : " (폐지)"}
-            </option>
-          ))}
-        </select>
-        <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value={ALL}>재직구분 · 전체</option>
-          {DISPLAY_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <select className="input" value={position} onChange={(e) => setPosition(e.target.value)}>
-          <option value={ALL}>직급 · 전체</option>
-          {positions.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
-        {filterOn && (
-          <button
-            className="btn"
-            onClick={() => {
-              setQ("");
-              setCompany(ALL);
-              setDept(ALL);
-              setStatus(ALL);
-              setPosition(ALL);
-            }}
-          >
-            초기화
-          </button>
-        )}
-        <span className="grow" />
-        <button
-          className="btn"
-          disabled={filtered.length === 0}
-          onClick={() => downloadCsv(filtered, `직원명부_${today().replace(/-/g, "")}.csv`)}
-        >
-          엑셀 내보내기 ({filtered.length})
-        </button>
-        {canEdit && pickedRows.length > 0 && (
-          <button className="btn primary" onClick={() => setBulkOpen(true)}>
-            조직개편 일괄 발령 ({pickedRows.length})
-          </button>
-        )}
-        <button
-          className="btn primary"
-          disabled={!canEdit}
-          title={canEdit ? undefined : "로그인이 필요합니다"}
-          onClick={() => setCreating(true)}
-        >
-          + 신규 입사자 등록
-        </button>
-      </div>
-
+      {/* 홈의 주인공은 직원 표 — KPI 다음에 바로 온다. 차트는 하단으로 (260825 방향서) */}
       <div className="card">
         <div className="card-head">
           <h3>직원 대장</h3>
@@ -434,6 +256,102 @@ export default function Home() {
             {filtered.length}명 표시
             {filtered.length !== rows.length && ` · 전체 ${rows.length}명`} · 열 제목을 눌러 정렬
           </span>
+        </div>
+
+        <div className="toolbar">
+          <input
+            className="input"
+            style={{ minWidth: 180 }}
+            placeholder="이름·사번 검색"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <select className="input" value={company} onChange={(e) => setCompany(e.target.value)}>
+            <option value={ALL}>소속 · 전체</option>
+            {companies.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <select className="input" value={dept} onChange={(e) => setDept(e.target.value)}>
+            <option value={ALL}>부서 · 전체</option>
+            {depts.map((d) => (
+              <option key={d.code} value={d.name}>
+                {d.name}
+                {d.active ? "" : " (폐지)"}
+              </option>
+            ))}
+          </select>
+          <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value={ALL}>재직구분 · 전체</option>
+            {DISPLAY_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+          <select className="input" value={position} onChange={(e) => setPosition(e.target.value)}>
+            <option value={ALL}>직급 · 전체</option>
+            {positions.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          {filterOn && (
+            <button
+              className="btn"
+              onClick={() => {
+                setQ("");
+                setCompany(ALL);
+                setDept(ALL);
+                setStatus(ALL);
+                setPosition(ALL);
+              }}
+            >
+              초기화
+            </button>
+          )}
+          <span className="grow" />
+          <button
+            className="btn"
+            disabled={filtered.length === 0}
+            onClick={() => downloadCsv(filtered, `직원명부_${today().replace(/-/g, "")}.csv`)}
+          >
+            엑셀 내보내기 ({filtered.length})
+          </button>
+          {canEdit && pickedRows.length > 0 && (
+            <button className="btn primary" onClick={() => setBulkOpen(true)}>
+              조직개편 일괄 발령 ({pickedRows.length})
+            </button>
+          )}
+          <button
+            className="btn primary"
+            disabled={!canEdit}
+            title={canEdit ? undefined : "로그인이 필요합니다"}
+            onClick={() => setCreating(true)}
+          >
+            + 신규 입사자 등록
+          </button>
+        </div>
+
+        {/* 부서 칩 = 표의 필터 — 표 바로 위에 붙어 역할이 분명하다 */}
+        <div className="deptlist">
+          <span className="hint">부서별 현원 ·</span>
+          {summary.byDept.length === 0 && !loading ? (
+            <span className="chip">데이터 없음</span>
+          ) : (
+            summary.byDept.map(([d, n]) => (
+              <button
+                key={d}
+                className={`chip acc chip-btn${dept === d ? " on" : ""}`}
+                onClick={() => setDept(dept === d ? ALL : d)}
+              >
+                {d} {n}
+              </button>
+            ))
+          )}
         </div>
 
         {loadError ? (
@@ -517,7 +435,7 @@ export default function Home() {
                       <td className="a-right">{formatTenure(tenureYears(r))}</td>
                       <td className="a-right">{r.resign_date ?? "–"}</td>
                       <td className="a-center">
-                        <span className={STATUS_CHIP[ds]}>{ds}</span>
+                        <span className={STATUS_DOT[ds]}>{ds}</span>
                       </td>
                     </tr>
                   );
@@ -533,6 +451,71 @@ export default function Home() {
         사람은 <b>퇴사예정</b>으로 구분해 현원에 포함합니다. 가상 회사
         &lsquo;가온컴퍼니&rsquo;의 더미데이터입니다.
       </div>
+
+      <CollapsibleCard
+        id="movement"
+        title="인원 변동 — 최근 12개월"
+        defaultOpen={false}
+        meta={
+          <span className="unit">
+            누적 입사 {year12.inn} · 퇴사 {year12.out} · 명
+            {/* 증감만 칩으로 승격 — 색과 함께 부호·숫자를 항상 병기한다 (R16) */}
+            <span
+              className={`chip delta ${year12.net > 0 ? "up" : year12.net < 0 ? "down" : ""}`}
+            >
+              증감 {year12.net > 0 ? "+" : ""}
+              {year12.net}
+            </span>
+          </span>
+        }
+      >
+        <MovementChart data={months} />
+
+        <div className="t-scroll">
+          <table className="mini quarters">
+            <thead>
+              <tr>
+                <th>분기</th>
+                {quarters.map((qt) => (
+                  <th key={qt.label}>
+                    {qt.label}
+                    {qt.partial && <span className="sub-label">일부 기간</span>}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>입사</td>
+                {quarters.map((qt) => (
+                  <td key={qt.label}>{qt.inn}</td>
+                ))}
+              </tr>
+              <tr>
+                <td>퇴사</td>
+                {quarters.map((qt) => (
+                  <td key={qt.label}>{qt.out}</td>
+                ))}
+              </tr>
+              <tr>
+                <td>증감</td>
+                {quarters.map((qt) => (
+                  <td
+                    key={qt.label}
+                    className={qt.net > 0 ? "pos" : qt.net < 0 ? "neg" : undefined}
+                  >
+                    {qt.net > 0 ? "+" : ""}
+                    {qt.net}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </CollapsibleCard>
+
+      <TurnoverByDept rows={rows} />
+      <ResidenceBreakdown rows={rows} />
 
       {viewing && !editing && (
         <EmployeeDetail
