@@ -62,6 +62,8 @@ export type Employee = {
   contract_end_date: string | null;
   return_date: string | null;
   emergency_contact: string | null;
+  /** B3 — 프로필 사진. 스토리지 공개 URL 또는 생성 더미(data URI) */
+  photo_url: string | null;
   created_at: string;
 };
 

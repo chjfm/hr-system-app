@@ -96,6 +96,7 @@ export default function EmployeeForm({
         contract_end_date: null,
         return_date: null,
         emergency_contact: null,
+        photo_url: null,
       });
     }
   }, [employee, departments, positions, nextEmployeeNo]);

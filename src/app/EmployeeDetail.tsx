@@ -14,6 +14,8 @@ import {
 import { FIELD_LABEL } from "@/lib/fields";
 import { accruedLeave, usedLeave, type Leave } from "@/lib/leave";
 import GrowthTab from "./GrowthTab";
+import Avatar from "./Avatar";
+import { uploadPhoto } from "@/lib/photo";
 
 const KIND_CHIP: Record<Appointment["kind"], string> = {
   입사: "chip acc",
@@ -175,10 +177,38 @@ type Props = {
   canEdit: boolean;
   onEdit: () => void;
   onClose: () => void;
+  /** B3 — 사진 업로드 후 목록을 다시 읽어 썸네일을 맞춘다 */
+  onChanged?: () => void | Promise<void>;
 };
 
-export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: Props) {
+export default function EmployeeDetail({ employee, canEdit, onEdit, onClose, onChanged }: Props) {
   const [tab, setTab] = useState<Tab>("기본");
+  const [photo, setPhoto] = useState<string | null>(employee.photo_url);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("이미지 파일만 올릴 수 있습니다.");
+      return;
+    }
+    setPhotoBusy(true);
+    setPhotoError(null);
+    try {
+      const url = await uploadPhoto(employee.employee_no, file);
+      const { error } = await supabase.from("employees").update({ photo_url: url }).eq("id", employee.id);
+      if (error) throw new Error(error.message);
+      setPhoto(url);
+      await onChanged?.();
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "업로드에 실패했습니다.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
   const [history, setHistory] = useState<Appointment[] | null>(null);
   const [changes, setChanges] = useState<ChangeRow[] | null>(null);
   const [perf, setPerf] = useState<Performance[] | null>(null);
@@ -327,6 +357,16 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
         onClick={(e) => e.stopPropagation()}
       >
         <div className="card-head panel-head">
+          {/* B3 — 프로필 사진. 로그인 시 클릭해 교체 (브라우저에서 320px 정사각 축소 후 업로드) */}
+          <label className={canEdit ? "avatar-slot editable" : "avatar-slot"} title={canEdit ? "사진 변경" : undefined}>
+            <Avatar src={photo} name={employee.name_ko} size={56} />
+            {canEdit && (
+              <>
+                <input type="file" accept="image/*" onChange={onPickPhoto} disabled={photoBusy} hidden />
+                <span className="avatar-edit">{photoBusy ? "…" : "변경"}</span>
+              </>
+            )}
+          </label>
           <h3>{employee.name_ko}</h3>
           <span className={STATUS_CHIP[ds]}>{ds}</span>
           {ds !== "퇴사" && !employee.emergency_contact?.trim() && (
@@ -341,6 +381,8 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
           {/* 퇴사자는 언제 나갔는지가 첫 질문이다 — 요약줄에서 즉답한다 (이슈 #4) */}
           {ds === "퇴사" && employee.resign_date && ` · 퇴사 ${employee.resign_date}`}
         </div>
+
+        {photoError && <div className="callout error">{photoError}</div>}
 
         {ds === "퇴사예정" && (
           <div className="callout warn">

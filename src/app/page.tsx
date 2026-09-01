@@ -10,13 +10,11 @@ import {
   isOnBoard,
   supabase,
   tenureYears,
-  today,
   type DisplayStatus,
   type Department,
   type Employee,
   type EmployeeInput,
 } from "@/lib/supabase";
-import { downloadCsv } from "@/lib/csv";
 import type { Leave } from "@/lib/leave";
 import { COLUMNS, sortRows, type SortKey, type SortState } from "@/lib/sort";
 import { monthlyMovement, quarterly } from "@/lib/movement";
@@ -32,6 +30,8 @@ import IssueBoard from "./IssueBoard";
 import LeaveByDept from "./LeaveByDept";
 import MonthlyJoinLeave from "./MonthlyJoinLeave";
 import EmployeeForm from "./EmployeeForm";
+import ExportDialog from "./ExportDialog";
+import Avatar from "./Avatar";
 
 /* 표 안에서는 배지 대신 점+텍스트 — 158행에 색 배지를 깔면 표가 시끄럽다 */
 const STATUS_DOT: Record<DisplayStatus, string> = {
@@ -71,6 +71,8 @@ export default function Home() {
   const [viewing, setViewing] = useState<Employee | null>(null);
   const [editing, setEditing] = useState<Employee | null>(null);
   const [creating, setCreating] = useState(false);
+  // B6 — 엑셀 다운로드 컬럼 선택
+  const [exporting, setExporting] = useState(false);
 
   // 화면 분리 — 홈이 현황 파악과 사람 찾기 두 가지 일을 하고 있었다 (260825 개선 2)
   const [view, setView] = useState<"status" | "roster">("status");
@@ -439,12 +441,8 @@ export default function Home() {
             </button>
           )}
           <span className="grow" />
-          <button
-            className="btn"
-            disabled={filtered.length === 0}
-            onClick={() => downloadCsv(filtered, `직원명부_${today().replace(/-/g, "")}.csv`)}
-          >
-            엑셀 내보내기 ({filtered.length})
+          <button className="btn" disabled={filtered.length === 0} onClick={() => setExporting(true)}>
+            엑셀 다운로드 ({filtered.length})
           </button>
           {canEdit && pickedRows.length > 0 && (
             <button className="btn primary" onClick={() => setBulkOpen(true)}>
@@ -553,7 +551,12 @@ export default function Home() {
                         </td>
                       )}
                       <td>{r.employee_no}</td>
-                      <td>{r.name_ko}</td>
+                      <td>
+                        <span className="name-cell">
+                          <Avatar src={r.photo_url} name={r.name_ko} size={24} />
+                          {r.name_ko}
+                        </span>
+                      </td>
                       <td>{r.company}</td>
                       <td>{r.department}</td>
                       <td>{r.position}</td>
@@ -658,7 +661,12 @@ export default function Home() {
           canEdit={canEdit}
           onEdit={() => setEditing(viewing)}
           onClose={() => setViewing(null)}
+          onChanged={load}
         />
+      )}
+
+      {exporting && (
+        <ExportDialog rows={filtered} title="직원명부" onClose={() => setExporting(false)} />
       )}
 
       {bulkOpen && (

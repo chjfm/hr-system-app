@@ -18,5 +18,6 @@ export const FIELD_LABEL: Record<string, string> = {
   contract_end_date: "계약종료일",
   return_date: "복직예정일",
   emergency_contact: "비상연락망",
+  photo_url: "사진",
   "신규 등록": "신규 등록",
 };
