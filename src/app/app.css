@@ -1441,3 +1441,28 @@ tbody tr.issue-row.urgent:hover {
 .chip-btn.dim {
   color: var(--faint);
 }
+
+/* ------------------------------------------------ 260901 A2 부서별 연차 · A3 이달 입퇴사 */
+/* 소진율 하위 부서 — 부서명 굵게 + 칩. 색만으로 구분하지 않는다 (R16) */
+table.leave-dept tbody tr.low td:first-child {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.low-chip {
+  margin-left: 6px;
+  font-size: 10px;
+  padding: 0 6px;
+}
+
+/* 합계행 — 토큰의 tfoot 주황을 그대로 쓴다. 강조는 화면당 1곳이므로 tfoot은 굵기만 */
+table.leave-dept tfoot td {
+  color: var(--ink);
+  font-weight: 700;
+  border-top: 1px solid var(--line);
+}
+
+/* 카드 제목 옆 월 선택 */
+.card-head input[type="month"].period {
+  width: 130px;
+}

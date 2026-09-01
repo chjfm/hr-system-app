@@ -57,14 +57,32 @@ export function toCsv(rows: Employee[]): string {
   return lines.join("\r\n");
 }
 
-export function downloadCsv(rows: Employee[], filename: string): void {
+function saveCsv(text: string, filename: string): void {
   // 엑셀이 한글 CSV를 UTF-8로 인식하려면 BOM이 필요하다. 없으면 전부 깨진다.
   // 리터럴로 넣으면 소스에 보이지 않는 문자가 남으므로 이스케이프로 쓴다.
-  const blob = new Blob(["\uFEFF" + toCsv(rows)], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + text], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function downloadCsv(rows: Employee[], filename: string): void {
+  saveCsv(toCsv(rows), filename);
+}
+
+/**
+ * 임의 표 내보내기 (260901 B6 공용) — 현황 위젯(이달 입퇴사 등)과 대장 컬럼 선택이 함께 쓴다.
+ * "엑셀"이라 부르지만 형식은 BOM 붙은 CSV — 엑셀이 더블클릭으로 연다. xlsx 라이브러리는 들이지 않는다.
+ */
+export function downloadTable(
+  filename: string,
+  headers: readonly string[],
+  rows: (string | null | undefined)[][],
+): void {
+  const lines = [headers.map(cell).join(",")];
+  for (const r of rows) lines.push(r.map(cell).join(","));
+  saveCsv(lines.join("\r\n"), filename);
 }

@@ -17,7 +17,7 @@ import {
   type EmployeeInput,
 } from "@/lib/supabase";
 import { downloadCsv } from "@/lib/csv";
-import { accruedLeave, usedLeave, type Leave } from "@/lib/leave";
+import type { Leave } from "@/lib/leave";
 import { COLUMNS, sortRows, type SortKey, type SortState } from "@/lib/sort";
 import { monthlyMovement, quarterly } from "@/lib/movement";
 import { detectIssues } from "@/lib/issues";
@@ -29,6 +29,8 @@ import ResidenceBreakdown from "./ResidenceBreakdown";
 import BulkTransfer from "./BulkTransfer";
 import EmployeeDetail from "./EmployeeDetail";
 import IssueBoard from "./IssueBoard";
+import LeaveByDept from "./LeaveByDept";
+import MonthlyJoinLeave from "./MonthlyJoinLeave";
 import EmployeeForm from "./EmployeeForm";
 
 /* 표 안에서는 배지 대신 점+텍스트 — 158행에 색 배지를 깔면 표가 시끄럽다 */
@@ -162,15 +164,6 @@ export default function Home() {
       byEtype: EMPLOYMENT_TYPES.map((t) => [t, byEtype.get(t) ?? 0] as const),
     };
   }, [rows]);
-
-  // 연차 요약 (260826 4단계) — 현원 발생 합 대비 사용 합
-  const leaveSummary = useMemo(() => {
-    const onBoard = rows.filter((r) => isOnBoard(r));
-    const onSet = new Set(onBoard.map((r) => r.employee_no));
-    const accrued = onBoard.reduce((s, r) => s + accruedLeave(r), 0);
-    const used = usedLeave((allLeaves ?? []).filter((l) => onSet.has(l.employee_no)));
-    return { accrued, used, rate: accrued ? (used / accrued) * 100 : 0 };
-  }, [rows, allLeaves]);
 
   // A1 — 인사 이슈 보드: 향후 30일 시점 감지 (employees 한 표에서 계산, 저장 없음)
   const issues = useMemo(() => detectIssues(rows), [rows]);
@@ -312,7 +305,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 고용형태 구성 (260826 1단계) — 급여·4대보험·계약 관리가 이 구분으로 갈린다 */}
+      {/* [3] 면담 진행률(A4) | 부서별 연차 사용(A2) — A4 구현 전에는 A2 전폭 */}
+      <LeaveByDept rows={rows} leaves={allLeaves} />
+
+      {/* [4] 이달 입퇴사 (A3) */}
+      <MonthlyJoinLeave rows={rows} onOpen={setViewing} />
+
+      {/* [5] 구성 — 고용형태 | 부서별 현원 (매일 볼 필요 없는 구성 지표 묶음) */}
       <div className="row2 even">
         <div className="card">
           <div className="card-head">
@@ -329,28 +328,28 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 연차 사용 현황 (260826 4단계) — 산정 기준은 인터뷰에서 확정될 가정값 */}
         <div className="card">
           <div className="card-head">
-            <h3>연차 사용 현황</h3>
-            <span className="unit">현원 · 산정 기준은 인사팀 확인 예정</span>
+            <h3>부서별 현원</h3>
+            <span className="unit">현원 기준 · 많은 순 · 칩을 누르면 대장으로</span>
           </div>
-          <div className="etype-row leave-row">
-            <div className="etype">
-              <span className="k">발생</span>
-              <span className="v">{leaveSummary.accrued.toLocaleString()}</span>
-              <span className="k">일</span>
-            </div>
-            <div className="etype">
-              <span className="k">사용</span>
-              <span className="v">{leaveSummary.used.toLocaleString()}</span>
-              <span className="k">일</span>
-            </div>
-            <div className="etype">
-              <span className="k">소진율</span>
-              <span className="v">{leaveSummary.rate.toFixed(0)}</span>
-              <span className="k">%</span>
-            </div>
+          <div className="deptlist">
+            {summary.byDept.length === 0 && !loading ? (
+              <span className="chip">데이터 없음</span>
+            ) : (
+              summary.byDept.map(([d, n]) => (
+                <button
+                  key={d}
+                  className="chip chip-btn"
+                  onClick={() => {
+                    setDept(d);
+                    setView("roster");
+                  }}
+                >
+                  {d} {n}
+                </button>
+              ))
+            )}
           </div>
         </div>
       </div>

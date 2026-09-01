@@ -3,8 +3,9 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 
 /* v2 — 현황·대장 탭 분리(260825)로 화면 구조가 바뀌어 구키의 접힘 상태를 승계하지 않는다.
-   키 교체로 1회 리셋되고, 이후에는 다시 사용자 선택이 우선한다 (R19 유지, 이슈 #1). */
-const PREFIX = "ai_people.section.v2.";
+   키 교체로 1회 리셋되고, 이후에는 다시 사용자 선택이 우선한다 (R19 유지, 이슈 #1).
+   v3 — 현황 탭 개편(260901 A-2)으로 부서별 이직·거주지가 접힘 기본이 됐다. 같은 이유로 1회 리셋. */
+const PREFIX = "ai_people.section.v3.";
 
 /**
  * 대시보드 섹션 접기/펴기 (R19).
