@@ -13,6 +13,7 @@ import {
 } from "@/lib/supabase";
 import { FIELD_LABEL } from "@/lib/fields";
 import { accruedLeave, usedLeave, type Leave } from "@/lib/leave";
+import GrowthTab from "./GrowthTab";
 
 const KIND_CHIP: Record<Appointment["kind"], string> = {
   입사: "chip acc",
@@ -45,7 +46,8 @@ type ChangeRow = {
    인터뷰로 항목 확정 후 — 그 전까지 '수집 예정' 배지가 자리를 표시한다. */
 /* P8 — 탭 기준은 정보 도메인: 발령이력은 조직의 시간 축이라 조직 탭,
    경력·자격 탭에는 사외 경력·학력·자격증·변경 기록. 성과는 평가 도메인 표기로 임시 배치 */
-const TABS = ["기본", "조직", "고용·계약", "급여", "경력·자격", "법정"] as const;
+/* 260901 — '성장' 탭 신설(면담 기록 + 인정 이력). 성장카드 독립 화면은 2호 */
+const TABS = ["기본", "조직", "고용·계약", "급여", "경력·자격", "성장", "법정"] as const;
 type Tab = (typeof TABS)[number];
 
 /** 필드 자리의 상태 — 현행 값 / 수집 예정 자리 / 마스킹 데모 / 임의 노드(칩 등) */
@@ -537,6 +539,8 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
             </Section>
           </>
         )}
+
+        {tab === "성장" && <GrowthTab employee={employee} canEdit={canEdit} />}
 
         {tab === "법정" && (
           <>
