@@ -1594,3 +1594,24 @@ tbody tr.editing {
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
+
+/* 성장 요약 3칸 — 인정 건수 · 최근 면담 · 다음 면담 */
+.etype-row.growth-kpis {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.etype .v.small {
+  font-size: 13px;
+}
+
+/* 패널 폭에서는 라벨 위 · 값 아래로 쌓는다 — 가로 배치는 날짜가 줄바꿈된다 */
+.etype-row.growth-kpis .etype {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.etype-row.growth-kpis .k,
+.etype-row.growth-kpis .v {
+  white-space: nowrap;
+}

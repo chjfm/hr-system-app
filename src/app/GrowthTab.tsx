@@ -8,6 +8,7 @@ import {
   type InterviewInput,
   type InterviewKind,
 } from "@/lib/growth";
+import RecognitionList from "./RecognitionList";
 
 const KIND_CHIP: Record<InterviewKind, string> = {
   "100일": "chip acc",
@@ -34,6 +35,7 @@ export default function GrowthTab({ employee, canEdit }: { employee: Employee; c
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recognitionCount, setRecognitionCount] = useState<number | null>(null);
 
   const loadInterviews = useCallback(async () => {
     const { data, error: err } = await supabase
@@ -112,6 +114,26 @@ export default function GrowthTab({ employee, canEdit }: { employee: Employee; c
 
   return (
     <>
+      {/* 성장 요약 — 목업 프레임 2의 KPI 4칸 중 1차에 값이 있는 것만(인정 · 면담). 궤적·목표는 2·3차 */}
+      <div className="etype-row growth-kpis">
+        <div className="etype">
+          <span className="k">인정</span>
+          <span className="v">{recognitionCount ?? "…"}</span>
+          <span className="k">건</span>
+        </div>
+        <div className="etype">
+          <span className="k">최근 면담</span>
+          <span className="v small">{last ? last.held_on : "–"}</span>
+        </div>
+        <div className="etype">
+          <span className="k">다음 면담</span>
+          <span className="v small">{nextPlanned ?? "–"}</span>
+        </div>
+      </div>
+
+      {/* 축 — 인정 이력 (성장카드 설계 260901) */}
+      <RecognitionList employeeNo={no} canEdit={canEdit} onCount={setRecognitionCount} />
+
       {/* 부가층 — 면담 기록. 인사팀이 잊지 않기 위한 관리 항목 */}
       <div className="card-head" style={{ marginTop: 4 }}>
         <h3>면담 기록 ({interviews?.length ?? "…"})</h3>
