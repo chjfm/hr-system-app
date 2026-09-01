@@ -1879,3 +1879,60 @@ tbody tr.editing {
 .org-edit .input {
   width: 180px;
 }
+
+/* ------------------------------------------------ 260901 A4 면담 진행률 */
+.progress-lead {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-num {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.progress-num .v {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.8px;
+  color: var(--ink-value);
+}
+
+.progress-num .s {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.progress-track {
+  height: 10px;
+}
+
+.progress-kinds {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* grid2 좌우 카드 — 표는 부서명 열만 남기고 촘촘하게 */
+table.leave-dept.compact .bar-cell,
+table.progress-dept .bar-cell {
+  min-width: 60px;
+}
+
+table.leave-dept.compact th,
+table.leave-dept.compact td,
+table.progress-dept th,
+table.progress-dept td {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+table.leave-dept.compact th:first-child,
+table.leave-dept.compact td:first-child,
+table.progress-dept th:first-child,
+table.progress-dept td:first-child {
+  padding-left: 12px;
+}

@@ -33,6 +33,8 @@ import EmployeeForm from "./EmployeeForm";
 import ExportDialog from "./ExportDialog";
 import Avatar from "./Avatar";
 import OrgChart from "./OrgChart";
+import InterviewProgress from "./InterviewProgress";
+import type { Interview } from "@/lib/growth";
 
 /* 표 안에서는 배지 대신 점+텍스트 — 158행에 색 배지를 깔면 표가 시끄럽다 */
 const STATUS_DOT: Record<DisplayStatus, string> = {
@@ -51,6 +53,8 @@ export default function Home() {
   const [rows, setRows] = useState<Employee[]>([]);
   const [depts, setDepts] = useState<Department[]>([]);
   const [allLeaves, setAllLeaves] = useState<Leave[] | null>(null);
+  // A4 — 면담 진행률 집계용 전체 면담 기록
+  const [allInterviews, setAllInterviews] = useState<Interview[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -111,6 +115,10 @@ export default function Home() {
       .from("leaves")
       .select("*")
       .then(({ data }) => setAllLeaves((data as Leave[]) ?? []));
+    supabase
+      .from("interviews")
+      .select("*")
+      .then(({ data }) => setAllInterviews((data as Interview[]) ?? []));
   }, [load, loadDepts]);
 
   const companies = useMemo(() => distinct(rows, "company"), [rows]);
@@ -336,8 +344,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* [3] 면담 진행률(A4) | 부서별 연차 사용(A2) — A4 구현 전에는 A2 전폭 */}
-      <LeaveByDept rows={rows} leaves={allLeaves} />
+      {/* [3] 면담 진행률(A4) | 부서별 연차 사용(A2) — grid2 */}
+      <div className="row2 even">
+        <InterviewProgress rows={rows} interviews={allInterviews} onOpen={setViewing} />
+        <LeaveByDept rows={rows} leaves={allLeaves} compact />
+      </div>
 
       {/* [4] 이달 입퇴사 (A3) */}
       <MonthlyJoinLeave rows={rows} onOpen={setViewing} />
