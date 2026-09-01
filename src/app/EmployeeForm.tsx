@@ -34,9 +34,13 @@ export default function EmployeeForm({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // 폼 초기값은 열릴 때 한 번 props에서 만든다 — 대상(employee)이 바뀌면 다시 만든다
     if (employee) {
-      const { id: _id, created_at: _created, ...rest } = employee;
+      const { id, created_at, ...rest } = employee;
+      void id;
+      void created_at;
       // 발령일자는 매 변경마다 새로 정한다 — 지난 값을 끌고 오면 조용히 틀린 날짜가 박힌다
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({ ...rest, effective_date: today() });
     } else {
       setForm({
@@ -57,6 +61,9 @@ export default function EmployeeForm({
         employment_type: "정규직",
         residence: null,
         effective_date: null,
+        contract_end_date: null,
+        return_date: null,
+        emergency_contact: null,
       });
     }
   }, [employee, departments, positions, nextEmployeeNo]);

@@ -40,6 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# 로컬 검증 산출물
+# 로컬 검증 산출물 — 단, 지시서 검증 캡처(docs/verify/)는 추적한다 (260901)
 .playwright-mcp/
 *.png
+!docs/verify/**

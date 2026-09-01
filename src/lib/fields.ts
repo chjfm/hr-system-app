@@ -15,5 +15,8 @@ export const FIELD_LABEL: Record<string, string> = {
   employment_type: "고용형태",
   residence: "거주지역",
   effective_date: "발령일자",
+  contract_end_date: "계약종료일",
+  return_date: "복직예정일",
+  emergency_contact: "비상연락망",
   "신규 등록": "신규 등록",
 };

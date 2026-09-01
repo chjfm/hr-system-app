@@ -1393,3 +1393,51 @@ table.quarters td {
 table.quarters .sub-label {
   font-size: 9px;
 }
+
+/* ------------------------------------------------ 260901 A1 인사 이슈 보드 */
+/* KPI 5칸 — 이슈(lead) · 현원 · 재직 · 휴직 · 퇴사예정 */
+.statbar {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+/* 보드는 길어질 수 있다 — 카드가 아니라 표 영역만 스크롤, 헤더는 고정 */
+.issue-scroll {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.issue-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* 부연(근속 연차·사번) — 값 옆에 한 단계 작게 */
+.issue-note {
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* 임박·경과 = 빨간 인셋 바 + 옅은 배경, 주의 = 노란 인셋 바만 (색과 함께 상태 글자가 병기된다) */
+tbody tr.issue-row.urgent {
+  background: var(--bad-soft);
+}
+
+tbody tr.issue-row.urgent td:first-child {
+  box-shadow: inset 3px 0 0 var(--bad);
+}
+
+tbody tr.issue-row.soon td:first-child {
+  box-shadow: inset 3px 0 0 var(--warn);
+}
+
+tbody tr.issue-row.urgent:hover {
+  background: var(--bad-soft);
+}
+
+/* 대상 0건인 유형 칩은 뒤로 물린다 */
+.chip-btn.dim {
+  color: var(--faint);
+}

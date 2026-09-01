@@ -34,9 +34,11 @@ export default function CollapsibleCard({
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    // 저장값은 하이드레이션 뒤에만 읽을 수 있다 — 서버 렌더와 첫 클라이언트 렌더를 맞춘 뒤 적용
     try {
       const saved = window.localStorage.getItem(PREFIX + id);
       // 저장값이 있으면 그것이 기본값을 덮는다 — 사용자가 마지막에 둔 상태가 우선
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved === "0") setOpen(false);
       else if (saved === "1") setOpen(true);
     } catch {

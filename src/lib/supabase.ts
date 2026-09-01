@@ -58,6 +58,10 @@ export type Employee = {
   effective_date: string | null;
   /** R18 — 시·구 단위만. 상세 주소는 저장하지 않는다 (R9) */
   residence: string | null;
+  /** 260901 이슈 보드 입력 3건 — 계약종료일(계약직·인턴) · 복직예정일(휴직) · 비상연락망 */
+  contract_end_date: string | null;
+  return_date: string | null;
+  emergency_contact: string | null;
   created_at: string;
 };
 

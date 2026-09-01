@@ -20,6 +20,7 @@ import { downloadCsv } from "@/lib/csv";
 import { accruedLeave, usedLeave, type Leave } from "@/lib/leave";
 import { COLUMNS, sortRows, type SortKey, type SortState } from "@/lib/sort";
 import { monthlyMovement, quarterly } from "@/lib/movement";
+import { detectIssues } from "@/lib/issues";
 import { useSession } from "./AuthBar";
 import MovementChart from "./MovementChart";
 import CollapsibleCard from "./CollapsibleCard";
@@ -27,6 +28,7 @@ import TurnoverByDept from "./TurnoverByDept";
 import ResidenceBreakdown from "./ResidenceBreakdown";
 import BulkTransfer from "./BulkTransfer";
 import EmployeeDetail from "./EmployeeDetail";
+import IssueBoard from "./IssueBoard";
 import EmployeeForm from "./EmployeeForm";
 
 /* 표 안에서는 배지 대신 점+텍스트 — 158행에 색 배지를 깔면 표가 시끄럽다 */
@@ -86,6 +88,8 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // 최초 적재 — setState는 응답이 온 뒤(await 이후)에만 일어난다
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
     // 부서 마스터 (R13) — 목록 필터와 등록·수정 폼이 모두 여기서 부서를 가져온다
     supabase
@@ -167,6 +171,9 @@ export default function Home() {
     const used = usedLeave((allLeaves ?? []).filter((l) => onSet.has(l.employee_no)));
     return { accrued, used, rate: accrued ? (used / accrued) * 100 : 0 };
   }, [rows, allLeaves]);
+
+  // A1 — 인사 이슈 보드: 향후 30일 시점 감지 (employees 한 표에서 계산, 저장 없음)
+  const issues = useMemo(() => detectIssues(rows), [rows]);
 
   // R12 — 12개월 추이 + 분기 병기
   const months = useMemo(() => monthlyMovement(rows), [rows]);
@@ -266,19 +273,27 @@ export default function Home() {
       {/* P1 — 타이포 앵커: 페이지가 스스로 무엇인지 말한다 */}
       <div className="page-title">
         <h2>현황</h2>
-        <p>현원 구성과 최근 12개월 인원 변동 · 매일 아침 이 화면으로 시작합니다</p>
+        <p>오늘 손댈 일 → 현원 구성 → 추이 · 매일 아침 이 화면으로 시작합니다</p>
       </div>
 
-      {/* R21 — 현원이 1순위다. 나머지는 "현원이 어떻게 구성되는가"(재직·휴직·퇴사예정)와
-          참고 지표(퇴사 누적·평균 근속)로 한 단계 내렸다. */}
+      {/* [1] A1 — 인사 이슈 보드가 최상단. 현원은 안심 지표, 이슈는 손댈 일 */}
+      <IssueBoard issues={issues} loading={loading} onOpen={setViewing} />
+
+      {/* [2] KPI — 첫 칸 '이슈 N건'(lead 주황) = 손댈 일. 퇴사 누적·평균 근속은
+          참고 지표라 KPI에서 빼고 인원 변동 카드 unit 문구로 내렸다 (260901 A-2) */}
       <section className="statbar">
         <div className="stat-lead">
-          <span className="k">현원</span>
-          <span className="v">{summary.onBoard}</span>
-          <span className="s">재직 + 휴직 + 퇴사예정</span>
+          <span className="k">이슈</span>
+          <span className="v">{issues.length}</span>
+          <span className="s">건 · 향후 30일 손댈 일</span>
         </div>
 
         <div className="stat-rest">
+          <div className="stat">
+            <span className="k">현원</span>
+            <span className="v">{summary.onBoard}</span>
+            <span className="s">재직 + 휴직 + 퇴사예정</span>
+          </div>
           <div className="stat">
             <span className="k">재직</span>
             <span className="v">{summary.byStatus.재직}</span>
@@ -293,16 +308,6 @@ export default function Home() {
             <span className="k">퇴사예정</span>
             <span className="v">{summary.byStatus.퇴사예정}</span>
             <span className="s">아직 재직 중</span>
-          </div>
-          <div className="stat sub">
-            <span className="k">퇴사</span>
-            <span className="v">{summary.byStatus.퇴사}</span>
-            <span className="s">누적</span>
-          </div>
-          <div className="stat sub">
-            <span className="k">평균 근속</span>
-            <span className="v">{summary.avgTenure.toFixed(1)}</span>
-            <span className="s">년 · 현원 기준</span>
           </div>
         </div>
       </section>
@@ -586,7 +591,8 @@ export default function Home() {
         defaultOpen
         meta={
           <span className="unit">
-            누적 입사 {year12.inn} · 퇴사 {year12.out} · 명
+            입사 {year12.inn} · 퇴사 {year12.out} · 명 · 퇴사 누적 {summary.byStatus.퇴사} · 평균 근속{" "}
+            {summary.avgTenure.toFixed(1)}년
             {/* 증감만 칩으로 승격 — 색과 함께 부호·숫자를 항상 병기한다 (R16) */}
             <span
               className={`chip delta ${year12.net > 0 ? "up" : year12.net < 0 ? "down" : ""}`}
