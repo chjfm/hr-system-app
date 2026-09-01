@@ -1747,3 +1747,135 @@ tbody tr.editing {
   min-width: 0;
   line-height: 1.4;
 }
+
+/* ------------------------------------------------ 260901 B7 조직도 */
+.org-tree,
+.org-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.org-tree > li + li {
+  margin-top: 12px;
+}
+
+.org-tree ul {
+  margin-left: 7px;
+  border-left: 2px solid var(--line);
+  padding-left: 14px;
+}
+
+.org-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  flex-wrap: wrap;
+}
+
+.org-company h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.org-dept .org-node {
+  position: relative;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.org-dept:last-child .org-node {
+  border-bottom: 0;
+}
+
+/* 가지선 — 세로선에서 노드로 이어지는 짧은 가로선 */
+.org-line {
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  background: var(--line);
+}
+
+.org-name {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  margin-left: -4px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-cell);
+  cursor: pointer;
+  border-radius: var(--radius-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 110px;
+}
+
+.org-name:hover {
+  color: var(--ink-acc);
+  background: var(--surface-2);
+}
+
+.org-name:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.org-code {
+  font-size: 10px;
+  color: var(--faint);
+  min-width: 40px;
+}
+
+.org-bar {
+  position: relative;
+  flex: 0 0 160px;
+  height: 8px;
+  border-radius: var(--radius-ctl);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.org-bar .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  max-width: 100%;
+}
+
+.org-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-value);
+  min-width: 44px;
+  text-align: right;
+}
+
+.org-company .org-count {
+  font-weight: 500;
+  color: var(--muted);
+  text-align: left;
+}
+
+.org-dept.inactive .org-name {
+  color: var(--faint);
+}
+
+.org-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.org-edit .input {
+  width: 180px;
+}

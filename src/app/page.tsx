@@ -32,6 +32,7 @@ import MonthlyJoinLeave from "./MonthlyJoinLeave";
 import EmployeeForm from "./EmployeeForm";
 import ExportDialog from "./ExportDialog";
 import Avatar from "./Avatar";
+import OrgChart from "./OrgChart";
 
 /* 표 안에서는 배지 대신 점+텍스트 — 158행에 색 배지를 깔면 표가 시끄럽다 */
 const STATUS_DOT: Record<DisplayStatus, string> = {
@@ -75,7 +76,7 @@ export default function Home() {
   const [exporting, setExporting] = useState(false);
 
   // 화면 분리 — 홈이 현황 파악과 사람 찾기 두 가지 일을 하고 있었다 (260825 개선 2)
-  const [view, setView] = useState<"status" | "roster">("status");
+  const [view, setView] = useState<"status" | "roster" | "org">("status");
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -91,22 +92,26 @@ export default function Home() {
     setLoading(false);
   }, []);
 
+  // 부서 마스터 (R13) — 목록 필터·등록·수정 폼·조직도가 여기서 부서를 가져온다
+  const loadDepts = useCallback(async () => {
+    const { data } = await supabase
+      .from("departments")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    setDepts((data as Department[]) ?? []);
+  }, []);
+
   useEffect(() => {
     // 최초 적재 — setState는 응답이 온 뒤(await 이후)에만 일어난다
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-    // 부서 마스터 (R13) — 목록 필터와 등록·수정 폼이 모두 여기서 부서를 가져온다
-    supabase
-      .from("departments")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .then(({ data }) => setDepts((data as Department[]) ?? []));
+    loadDepts();
     // 연차 사용 기록 (260826 4단계) — 현황 요약 집계용
     supabase
       .from("leaves")
       .select("*")
       .then(({ data }) => setAllLeaves((data as Leave[]) ?? []));
-  }, [load]);
+  }, [load, loadDepts]);
 
   const companies = useMemo(() => distinct(rows, "company"), [rows]);
   const positions = useMemo(() => distinct(rows, "position"), [rows]);
@@ -259,7 +264,31 @@ export default function Home() {
         >
           직원 대장
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "org"}
+          className={view === "org" ? "tab on" : "tab"}
+          onClick={() => setView("org")}
+        >
+          조직도
+        </button>
       </nav>
+
+      {view === "org" && (
+        <OrgChart
+          rows={rows}
+          depts={depts}
+          canEdit={canEdit}
+          onOpenDept={(d) => {
+            setDept(d);
+            setView("roster");
+          }}
+          onChanged={async () => {
+            await Promise.all([loadDepts(), load()]);
+          }}
+        />
+      )}
 
       {view === "status" && (
       <>
