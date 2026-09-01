@@ -251,7 +251,13 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
     ["휴대전화", val(employee.phone)],
     ["거주지역", val(employee.residence)],
     ["주소(상세)", PENDING],
-    ["비상연락망", PENDING],
+    // B5 — 비상연락망 공백은 '수집 예정'이 아니라 '미기재'다. 값이 없으면 배지로 드러낸다
+    [
+      "비상연락망",
+      employee.emergency_contact?.trim()
+        ? val(employee.emergency_contact)
+        : { t: "node", v: <span className="chip warn">미기재</span> },
+    ],
   ];
 
   /* 조직·역할 — 직위·직급·직책 3개념은 인터뷰에서 정리 (항목사전 §3) */
@@ -278,7 +284,9 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
     ["채용구분", val(employee.hire_type)],
     // 긴 라벨은 축약한다 — 정식 명칭은 항목사전이 정본 (260825 방향서 변경 3)
     ["입사 전 경력", PENDING],
-    ["계약기간(계약직)", PENDING],
+    // 260901 — 계약종료일은 컬럼이 생겼다(이슈 보드 입력). 계약 시작·프로젝트명은 여전히 수집 예정
+    ["계약종료일", employee.contract_end_date ? val(employee.contract_end_date) : ds === "재직" && (employee.employment_type === "계약직" || employee.employment_type === "인턴") ? { t: "node", v: <span className="chip warn">미기재</span> } : val(null)],
+    ["복직예정일", employee.status === "휴직" ? (employee.return_date ? val(employee.return_date) : { t: "node", v: <span className="chip warn">미기재</span> }) : val(null)],
     ["프로젝트명", PENDING],
   ];
 
@@ -321,6 +329,9 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose }: P
         <div className="card-head panel-head">
           <h3>{employee.name_ko}</h3>
           <span className={STATUS_CHIP[ds]}>{ds}</span>
+          {ds !== "퇴사" && !employee.emergency_contact?.trim() && (
+            <span className="chip warn" title="기본 탭에서 확인">비상연락망 미기재</span>
+          )}
           <button type="button" className="icon-btn" aria-label="닫기" onClick={onClose}>
             ✕
           </button>

@@ -1615,3 +1615,32 @@ tbody tr.editing {
 .etype-row.growth-kpis .v {
   white-space: nowrap;
 }
+
+/* ------------------------------------------------ 260901 B4 중복 검증 · B5 비상연락망 */
+.dup-callout {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--ink-cell);
+}
+
+.dup-list {
+  margin: 0;
+  padding-left: 16px;
+  line-height: 1.7;
+}
+
+.dup-ack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.field label .chip.warn {
+  font-size: 10px;
+  padding: 0 6px;
+  vertical-align: middle;
+}

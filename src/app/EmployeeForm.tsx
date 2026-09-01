@@ -14,6 +14,8 @@ import {
 
 type Props = {
   employee: Employee | null; // null이면 신규 등록
+  /** B4 중복 검증의 비교 대상 — 전체 직원 */
+  rows: Employee[];
   departments: Department[];
   positions: string[];
   nextEmployeeNo: string;
@@ -21,8 +23,36 @@ type Props = {
   onClose: () => void;
 };
 
+type Dup = { field: string; value: string; who: Employee[] };
+
+const digits = (v: string | null | undefined) => (v ?? "").replace(/\D/g, "");
+
+function findDuplicates(f: EmployeeInput, rows: Employee[], selfId: string | null): Dup[] {
+  const others = rows.filter((r) => r.id !== selfId);
+  const out: Dup[] = [];
+  const no = f.employee_no.trim();
+  if (!selfId && no) {
+    const who = others.filter((r) => r.employee_no === no);
+    if (who.length) out.push({ field: "사번", value: no, who });
+  }
+  const email = (f.email ?? "").trim().toLowerCase();
+  if (email) {
+    const who = others.filter((r) => (r.email ?? "").toLowerCase() === email);
+    if (who.length) out.push({ field: "메일계정", value: email, who });
+  }
+  const phone = digits(f.phone);
+  if (phone.length >= 9) {
+    const who = others.filter((r) => digits(r.phone) === phone);
+    if (who.length) out.push({ field: "휴대전화", value: f.phone!.trim(), who });
+    // 본인 번호를 비상연락망에 적는 실수
+    if (digits(f.emergency_contact) === phone) out.push({ field: "비상연락망", value: "본인 휴대전화와 동일", who: [] });
+  }
+  return out;
+}
+
 export default function EmployeeForm({
   employee,
+  rows,
   departments,
   positions,
   nextEmployeeNo,
@@ -32,6 +62,8 @@ export default function EmployeeForm({
   const [form, setForm] = useState<EmployeeInput | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // B4 — 중복이 있어도 막지는 않는다(가족 번호 공유 등 정당한 경우). 확인했다는 표시를 받고 저장한다
+  const [ackDup, setAckDup] = useState(false);
 
   useEffect(() => {
     // 폼 초기값은 열릴 때 한 번 props에서 만든다 — 대상(employee)이 바뀌면 다시 만든다
@@ -71,6 +103,10 @@ export default function EmployeeForm({
   if (!form) return null;
 
   const set = (patch: Partial<EmployeeInput>) => setForm({ ...form, ...patch });
+
+  // B4 — 수기 입력 중복 검증: 사번(신규만) · 이메일 · 휴대전화 · 비상연락망 번호.
+  // 주민번호는 스키마에 없어(R9) 비교 대상이 없다 — 해시 컬럼 도입 전까지 보류.
+  const dups = findDuplicates(form, rows, employee?.id ?? null);
 
   /** 부서·직급·상태가 바뀌면 발령이력이 남는다 → 발령일자를 물어야 한다 */
   const willLogAppointment =
@@ -119,6 +155,19 @@ export default function EmployeeForm({
       setError("발령일자는 입사일보다 빠를 수 없습니다.");
       return;
     }
+    if (f.contract_end_date && f.contract_end_date < f.hire_date) {
+      setError("계약종료일은 입사일보다 빠를 수 없습니다.");
+      return;
+    }
+    // B4 — 사번 중복은 저장 불가(DB unique). 그 외 중복은 확인 표시가 있어야 저장
+    if (dups.some((d) => d.field === "사번")) {
+      setError("이미 있는 사번입니다. 다른 사번을 입력하세요.");
+      return;
+    }
+    if (dups.length > 0 && !ackDup) {
+      setError("중복 항목이 있습니다. 아래에서 확인 표시 후 저장하세요.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -129,6 +178,9 @@ export default function EmployeeForm({
         name_en: f.name_en?.trim() || null,
         email: f.email?.trim() || null,
         phone: f.phone?.trim() || null,
+        emergency_contact: f.emergency_contact?.trim() || null,
+        // 복직예정일은 휴직 상태에서만 의미가 있다
+        return_date: f.status === "휴직" ? f.return_date || null : null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "저장에 실패했습니다.");
@@ -367,7 +419,72 @@ export default function EmployeeForm({
               placeholder="010-0000-0000"
             />
           </div>
+
+          {/* 260901 — 이슈 보드 입력 3건 (B5 비상연락망 · A1 계약종료일·복직예정일) */}
+          <div className="field">
+            <label htmlFor="f-emg">
+              비상연락망
+              {!form.emergency_contact?.trim() && <span className="chip warn" style={{ marginLeft: 6 }}>미기재</span>}
+            </label>
+            <input
+              id="f-emg"
+              className="input"
+              value={form.emergency_contact ?? ""}
+              onChange={(e) => set({ emergency_contact: e.target.value })}
+              placeholder="배우자 · 010-0000-0000"
+            />
+            <span className="field-note">관계 · 번호 한 줄. 비어 있으면 현황 이슈 보드에 오릅니다</span>
+          </div>
+
+          <div className="field">
+            <label htmlFor="f-cend">계약종료일</label>
+            <input
+              id="f-cend"
+              type="date"
+              className="input"
+              value={form.contract_end_date ?? ""}
+              min={form.hire_date || undefined}
+              onChange={(e) => set({ contract_end_date: e.target.value || null })}
+            />
+            <span className="field-note">계약직·인턴 — 만료 15일·3일 전 이슈 보드 강조</span>
+          </div>
+
+          <div className="field">
+            <label htmlFor="f-ret">복직예정일</label>
+            <input
+              id="f-ret"
+              type="date"
+              className="input"
+              value={form.return_date ?? ""}
+              disabled={form.status !== "휴직"}
+              onChange={(e) => set({ return_date: e.target.value || null })}
+            />
+            <span className="field-note">휴직 상태에서만 입력</span>
+          </div>
         </div>
+
+        {/* B4 — 저장 전 경고. 어떤 값이 누구와 겹치는지까지 보여야 판단이 된다 */}
+        {dups.length > 0 && (
+          <div className="callout warn dup-callout">
+            <b>중복 항목 {dups.length}건</b>
+            <ul className="dup-list">
+              {dups.map((d) => (
+                <li key={d.field + d.value}>
+                  <b>{d.field}</b> {d.value}
+                  {d.who.length > 0 && (
+                    <> — {d.who.map((w) => `${w.name_ko}(${w.employee_no})`).join(", ")}와 동일</>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {!dups.some((d) => d.field === "사번") && (
+              <label className="dup-ack">
+                <input type="checkbox" checked={ackDup} onChange={(e) => setAckDup(e.target.checked)} />
+                확인했습니다 — 중복을 인지하고 그대로 저장
+              </label>
+            )}
+          </div>
+        )}
 
         <div className="callout">
           <b>재직구분을 &lsquo;퇴사&rsquo;로 바꾸면 퇴사일이 필수가 됩니다.</b> 부서·직급을 바꾸거나
