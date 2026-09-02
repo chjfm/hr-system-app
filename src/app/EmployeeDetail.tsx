@@ -49,8 +49,9 @@ type ChangeRow = {
 /* P8 — 탭 기준은 정보 도메인: 발령이력은 조직의 시간 축이라 조직 탭,
    경력·자격 탭에는 사외 경력·학력·자격증·변경 기록. 성과는 평가 도메인 표기로 임시 배치 */
 /* 260901 — '성장' 탭 신설(면담 기록 + 인정 이력). 성장카드 독립 화면은 2호
-   260902 C2 — '평가' 탭 신설: 성과 이력(평가)을 경력·자격에서 이동, 등급 칸 없음(260823) */
-const TABS = ["기본", "조직", "고용·계약", "급여", "경력·자격", "성장", "평가", "법정"] as const;
+   260902 C2 — '평가' 탭 신설: 성과 이력(평가)을 경력·자격에서 이동, 등급 칸 없음(260823)
+   260902 C3 — '근태' 탭 신설: 연차 블록을 고용·계약에서 이동(연차는 계약이 아니라 근태 — 사용자 결정 260901) */
+const TABS = ["기본", "조직", "고용·계약", "급여", "근태", "경력·자격", "성장", "평가", "법정"] as const;
 type Tab = (typeof TABS)[number];
 
 /** 필드 자리의 상태 — 현행 값 / 수집 예정 자리 / 마스킹 데모 / 임의 노드(칩 등) */
@@ -337,6 +338,12 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose, onC
     ["비고", PENDING],
   ];
 
+  /* 근태 (C3 260902) — 근무시간·초과근무 자리. 다우 연동 ~12월 · 1-4 수집 후 */
+  const attendRows: [string, Slot][] = [
+    ["근무시간", PENDING],
+    ["초과근무", PENDING],
+  ];
+
   /* 평가 (C2 260902) — 재무목표·MBO·연간 점수 자리. 값 원천은 DI Works 연동(#165)·평가제도 */
   const evalRows: [string, Slot][] = [
     ["재무목표 달성률", PENDING],
@@ -455,46 +462,6 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose, onC
         {tab === "고용·계약" && (
           <>
             <SlotList rows={employRows} />
-
-            {/* 연차 (260826 4단계) — 발생은 근로기준법 기본 산식, 사용은 leaves 기록 */}
-            <div className="card-head" style={{ marginTop: 4 }}>
-              <h3>연차</h3>
-              <span className="unit">발생 = 산식 · 사용 = 기록</span>
-            </div>
-            {leaves === null ? (
-              <div className="t-empty">불러오는 중…</div>
-            ) : (
-              (() => {
-                const accrued = accruedLeave(employee);
-                const used = usedLeave(leaves);
-                return (
-                  <div className="etype-row leave-row">
-                    <div className="etype">
-                      <span className="k">발생</span>
-                      <span className="v">{accrued}</span>
-                      <span className="k">일</span>
-                    </div>
-                    <div className="etype">
-                      <span className="k">사용</span>
-                      <span className="v">{used % 1 ? used.toFixed(1) : used}</span>
-                      <span className="k">일</span>
-                    </div>
-                    <div className="etype">
-                      <span className="k">잔여</span>
-                      <span className="v">
-                        {(accrued - used) % 1 ? (accrued - used).toFixed(1) : accrued - used}
-                      </span>
-                      <span className="k">일</span>
-                    </div>
-                  </div>
-                );
-              })()
-            )}
-            <div className="callout">
-              발생 연차는 <b>근로기준법 기본 산식(입사일 기준 15일+가산, 1년 미만 월
-              1일)의 가정</b>으로 계산했습니다. 회계연도 기준·이월 등{" "}
-              <b>산정 기준은 인사팀 확인 예정</b>입니다.
-            </div>
           </>
         )}
 
@@ -560,6 +527,53 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose, onC
         )}
 
         {tab === "성장" && <GrowthTab employee={employee} canEdit={canEdit} />}
+
+        {tab === "근태" && (
+          <>
+            {/* C3(260902) — 고용·계약 탭에서 이동. 발생은 근로기준법 기본 산식, 사용은 leaves 기록 */}
+            <div className="card-head" style={{ marginTop: 4 }}>
+              <h3>연차</h3>
+              <span className="unit">발생 = 산식 · 사용 = 기록</span>
+            </div>
+            {leaves === null ? (
+              <div className="t-empty">불러오는 중…</div>
+            ) : (
+              (() => {
+                const accrued = accruedLeave(employee);
+                const used = usedLeave(leaves);
+                return (
+                  <div className="etype-row leave-row">
+                    <div className="etype">
+                      <span className="k">발생</span>
+                      <span className="v">{accrued}</span>
+                      <span className="k">일</span>
+                    </div>
+                    <div className="etype">
+                      <span className="k">사용</span>
+                      <span className="v">{used % 1 ? used.toFixed(1) : used}</span>
+                      <span className="k">일</span>
+                    </div>
+                    <div className="etype">
+                      <span className="k">잔여</span>
+                      <span className="v">
+                        {(accrued - used) % 1 ? (accrued - used).toFixed(1) : accrued - used}
+                      </span>
+                      <span className="k">일</span>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
+            <div className="callout">
+              발생 연차는 <b>근로기준법 기본 산식(입사일 기준 15일+가산, 1년 미만 월
+              1일)의 가정</b>으로 계산했습니다. 회계연도 기준·이월 등{" "}
+              <b>산정 기준은 인사팀 확인 예정</b>입니다.
+            </div>
+
+            {/* C3 — 다우 연동(~12월) · 1-4 수집 후 값이 생기는 자리 */}
+            <SlotList rows={attendRows} />
+          </>
+        )}
 
         {tab === "평가" && (
           <>
