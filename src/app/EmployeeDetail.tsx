@@ -48,8 +48,9 @@ type ChangeRow = {
    인터뷰로 항목 확정 후 — 그 전까지 '수집 예정' 배지가 자리를 표시한다. */
 /* P8 — 탭 기준은 정보 도메인: 발령이력은 조직의 시간 축이라 조직 탭,
    경력·자격 탭에는 사외 경력·학력·자격증·변경 기록. 성과는 평가 도메인 표기로 임시 배치 */
-/* 260901 — '성장' 탭 신설(면담 기록 + 인정 이력). 성장카드 독립 화면은 2호 */
-const TABS = ["기본", "조직", "고용·계약", "급여", "경력·자격", "성장", "법정"] as const;
+/* 260901 — '성장' 탭 신설(면담 기록 + 인정 이력). 성장카드 독립 화면은 2호
+   260902 C2 — '평가' 탭 신설: 성과 이력(평가)을 경력·자격에서 이동, 등급 칸 없음(260823) */
+const TABS = ["기본", "조직", "고용·계약", "급여", "경력·자격", "성장", "평가", "법정"] as const;
 type Tab = (typeof TABS)[number];
 
 /** 필드 자리의 상태 — 현행 값 / 수집 예정 자리 / 마스킹 데모 / 임의 노드(칩 등) */
@@ -336,6 +337,13 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose, onC
     ["비고", PENDING],
   ];
 
+  /* 평가 (C2 260902) — 재무목표·MBO·연간 점수 자리. 값 원천은 DI Works 연동(#165)·평가제도 */
+  const evalRows: [string, Slot][] = [
+    ["재무목표 달성률", PENDING],
+    ["MBO 과제", PENDING],
+    ["연간 평가 점수", PENDING],
+  ];
+
   /* 법정·특수 — 신고 실무 근거 확인 후 이관/제외 판정 (항목사전 §7) */
   const legalRows: [string, Slot][] = [
     ["보훈 대상 여부", PENDING],
@@ -548,8 +556,16 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose, onC
               </div>
             )}
             </Section>
+          </>
+        )}
 
-            {/* P8 — 성과는 평가 도메인. 평가 탭 신설은 인터뷰 후 결정이라 여기 임시 배치 */}
+        {tab === "성장" && <GrowthTab employee={employee} canEdit={canEdit} />}
+
+        {tab === "평가" && (
+          <>
+            {/* C2 — 값 자리만. 등급 칸은 만들지 않는다(260823 결정) */}
+            <SlotList rows={evalRows} />
+            {/* C2(260902) — 경력·자격 탭에서 이동. 평가 탭 신설로 8/25 보류 해소 */}
             <Section title="성과 이력 (평가)" meta={<span className="unit">최신순</span>}>
               {perf === null ? (
                 <div className="t-empty">불러오는 중…</div>
@@ -592,8 +608,6 @@ export default function EmployeeDetail({ employee, canEdit, onEdit, onClose, onC
             </Section>
           </>
         )}
-
-        {tab === "성장" && <GrowthTab employee={employee} canEdit={canEdit} />}
 
         {tab === "법정" && (
           <>
